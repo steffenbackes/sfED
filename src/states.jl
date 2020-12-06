@@ -1,6 +1,9 @@
 
-########################################################################
-# Return numnber of configurations with different total spin S possible for given n and nMax
+"""
+    noSpinConfig(n, Nmax)
+
+Return numnber of configurations with different total spin S possible for given n and nMax
+"""
 function noSpinConfig(n::Int64, Nmax::Int64)::Int64
 	round(Int64,  Nmax/2-abs(n-Nmax/2)+1 )
 end 

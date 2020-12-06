@@ -1,8 +1,11 @@
+"""
+    getG0(eps, tmatrix, w)
 
-########################################################################
-# Construct the noninteracting Green's function 
-function getG0(    eps::Array{Float64,1},
-               tmatrix::Array{Float64,2},
+Construct the noninteracting Green's function from onsite energy `eps`,
+hoppings between sites `i` and `j`, `tmatrix` and Matsubara grid `w`.
+"""
+function getG0(eps::Array{Float64,1},tmatrix::Array{Float64,2},
+               
 					      w )
 	gf0 = zeros(ComplexF64,norb,norb,nw)
 	for n=1:nw
@@ -13,13 +16,16 @@ end
 ########################################################################
 
 
-#######################################################################
-# Generate the matrix for the annihilation operator acting on the subspace with N,S quantum number
-# we act subspace2 * c * subspace1
-# subspace 1 has all basis states with N,S
-# subspace 2 has all basis states with N-1,S-1 because we always annihilate one up electron
-# now just determine the transformation when acting the annihilation operator anni on it
-# anni is the orbital/spin index
+"""
+    getCmatrix(anni::Int64,subspace2, subspace1)
+
+Generate the matrix for the annihilation operator acting on the subspace with N,S quantum number
+we act `subspace2` * c * `subspace1`
+`subspace 1` has all basis states with N,S
+`subspace 2` has all basis states with N-1,S-1 because we always annihilate one up electron
+now just determine the transformation when acting the annihilation operator `anni` on it
+`anni` is the orbital/spin index
+"""
 function getCmatrix(     anni::Int64, 
                     subspace2::Array{Array{Int64,1},1}, 
 						  subspace1::Array{Array{Int64,1},1})
@@ -42,12 +48,16 @@ function getCmatrix(     anni::Int64,
 	return cmatrix
 end
 
-# Generate the matrix for the creation operator acting on the subspace with N-1,S-1 quantum numbers
-# we act subspace1 * cdag * subspace2
-# subspace 2 has all basis states with N-1,S-1 because we have previously annihilated one up electron
-# subspace 1 has all basis states with N,S
-# now just determine the transformation when acting the creation operator crea on it
-# crea is the orbital/spin index
+"""
+    getCdagmatrix(crea,subspace1,subspace2)
+
+Generate the matrix for the creation operator acting on the subspace with N-1,S-1 quantum numbers
+we act `subspace1` * cdag * `subspace2`
+`subspace 2` has all basis states with N-1,S-1 because we have previously annihilated one up electron
+`subspace 1` has all basis states with N,S
+now just determine the transformation when acting the creation operator `crea` on it
+`crea` is the orbital/spin index
+"""
 function getCdagmatrix(     crea::Int64, 
                        subspace1::Array{Array{Int64,1},1}, 
 							  subspace2::Array{Array{Int64,1},1})
@@ -71,10 +81,13 @@ function getCdagmatrix(     crea::Int64,
 end
 #######################################################################
 
-######################################################################
-# Now evaluate the Lehmann representation for the interacting finite-temperature Green's function ##############################
-# We now sum over all Eigenstates n1 with electron number N and all other eigenstates n2 with electron number N-1
-# Since we have spin degeneracy, we only calculate the up GF, so we annihilate one up spin, so we also only sum over all S-1 states for given S(n1)
+"""
+    getGF(evallist, eveclist, allstates)
+
+Evaluation of the Lehmann representation for the interacting finite-temperature Green's function
+We sum over all Eigenstates `evallist` with electron number N and all other eigenstates n2 with electron number N-1
+Since we have spin degeneracy, we only calculate the up GF, so we annihilate one up spin, so we also only sum over all S-1 states for given S(n1)
+"""
 function getGF( evallist::Array{Array{Float64,1},1},
                 eveclist::Array{Array{Complex{Float64},1},1},
 					allstates::Array{Array{Array{Array{Int64,1},1},1},1})
@@ -91,8 +104,8 @@ function getGF( evallist::Array{Array{Float64,1},1},
 	E0 = minimum( first.(evallist) )
 
 	for n1=1:length(evallist)
-		if n1%(Int64(length(evallist)/10)) == 0
-			println(Int64(n1*100.0/length(evallist)),"% ...")
+	    if n1%(Int64(length(evallist)/10)) == 0
+            print("\r"*lpad(Int64(n1*100.0/length(evallist)),4)*"%")
 		end
 
 		E1    = evallist[NSperm[n1]][1] -E0     # shift by E0 to avoid overflow
@@ -156,6 +169,7 @@ function getGF( evallist::Array{Array{Float64,1},1},
 			end # if exp(-beta*E) > cutoff
 		end # n2 loop
 	end # n1 loop
+    println("\rdone!")
 	
 	# copy the offdiagonals
 	for m1=1:norb
@@ -171,15 +185,16 @@ function getGF( evallist::Array{Array{Float64,1},1},
 
 	return gf_w, gf_iw, evalContributions
 end 
-#######################################################################
 
-#######################################################################
-# Calculate the Selfenergy from G0 and G
-function getSigma(gf0::Array{Complex{Float64},3}, gf::Array{Complex{Float64},3})
-	sigma = zeros(ComplexF64,size(gf))
+"""
+    getSigma(G0, G)
+
+Calculate the Selfenergy from `G0` and `G`
+"""
+function getSigma(G0::Array{Complex{Float64},3}, G::Array{Complex{Float64},3})
+	sigma = zeros(ComplexF64,size(G))
 	for i=1:nw
-		sigma[:,:,i]  = inv( gf0[:,:,i]) - inv( gf[:,:,i])
+		sigma[:,:,i]  = inv( G0[:,:,i]) - inv( G[:,:,i])
 	end
 	return sigma
 end
-#######################################################################

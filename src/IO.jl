@@ -1,28 +1,33 @@
 
-########################################################################
-# Writes a Green's function G(norb,norb,nw) like object into a file
-function writeGF(filename::String,
-                       gf::Array{Complex{Float64},3},
-                        w)            # w can be linspace or Float64 array
+"""
+    writeGF(filename, G, w)
+
+Writes a Green's function `G(norb,norb,nw)` in human readable (fixed column width format) form into a file.
+`mgrid` is the associated Matsuabra grid (as indices or evaluated).
+"""
+function writeGF(filename::String,G::Array{Complex{Float64},3},mgrid)
+    @assert length(mgrid) <= size(G,3)
 	open(filename, "w") do outf
-		for n=1:length(w)
-			ww = w[n]
-			write(outf, "$ww  " )
+		for n=1:length(mgrid)
+			ww = mgrid[n]
+            write(outf, rpad(ww,14) )
 			for m1=1:norb
 				for m2=1:norb
-					reg = real(gf[m1,m2,n])
-					img = imag(gf[m1,m2,n])
-					write(outf, "$reg  $img  " )  # does one really have to do it like this??
+					reg = real(G[m1,m2,n])
+					img = imag(G[m1,m2,n])
+                    write(outf, "$(rpad(reg,14)) $(rpad(img,14))" )  # does one really have to do it like this??
 				end # m2
 			end # m1
 			write(outf, "\n" )
 		end # n
 	end # close
 end
-########################################################################
 
-#######################################################################
-# Print all states and N S quantum numbers #########################
+"""
+    printStateInfo(allstates)
+
+Print all states and N S quantum numbers
+"""
 function printStateInfo(allstates::Array{Array{Array{Array{Int64,1},1},1},1})
 	println("We have the following states:")
 	for n=0:Nmax
@@ -34,13 +39,15 @@ function printStateInfo(allstates::Array{Array{Array{Array{Int64,1},1},1},1})
 		end
 	end
 end
-#######################################################################
 
-#######################################################################
-# Print the Eigenvalues and some info
-function printEvalInfo( evallist::Array{Array{Float64,1},1},
-                        eveclist::Array{Array{Complex{Float64},1},1},
-							  allstates::Array{Array{Array{Array{Int64,1},1},1},1})
+"""
+    printEvalInfo(evallist, eveclist, allstates)
+
+Print the Eigenvalues and some info
+"""
+function printEvalInfo(evallist::Array{Array{Float64,1},1},
+                       eveclist::Array{Array{Complex{Float64},1},1},
+					   allstates::Array{Array{Array{Array{Int64,1},1},1},1}) #TODO: omg
 	println("Eigenstates:")
 	for i=1:length(evallist)
 		E = evallist[i][1]
@@ -58,11 +65,14 @@ function printEvalInfo( evallist::Array{Array{Float64,1},1},
 		println(" ")
 	end
 end
-#######################################################################
 
 
-#######################################################################
-# write the weight contribtions of each Eigenstate sorted by N,S quantum numbers
+
+"""
+    writeEvalContributionsSectors(filename, evalContributions)
+
+write the weight contribtions of each Eigenstate sorted by N,S quantum numbers
+"""
 function writeEvalContributionsSectors(filename::String, evalContributions::Array{Array{Float64,1},1})
 	perm = sortperm(evalContributions)                   # sort by N,S, then Eval
 	open(filename, "w") do outf
@@ -89,10 +99,12 @@ function writeEvalContributionsSectors(filename::String, evalContributions::Arra
 		end
 	end # close
 end
-#######################################################################
 
-#######################################################################
-# write the weight contribtions of each Eigenstate sorted by Eigenenergy
+"""
+    writeEvalContributions(file, evalContributions)
+
+write the weight contribtions of each Eigenstate sorted by Eigenenergy
+"""
 function writeEvalContributions(filename::String, evalContributions::Array{Array{Float64,1},1})
 	# sort the contributions according to energy
 	evals = []
@@ -108,4 +120,3 @@ function writeEvalContributions(filename::String, evalContributions::Array{Array
 		end
 	end # close
 end
-#######################################################################
