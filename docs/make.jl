@@ -1,14 +1,14 @@
 using sfED
 using Documenter
 
-push!(:OAD_PATH, "../src/")
+push!(LOAD_PATH, "../src/")
 makedocs(;
     modules=[sfED],
-    authors=["Steffen Backes <mail@mail.mm> and Contributers"],
+    authors="Steffen Backes <mail@mail.mm> and Contributers",
     repo="https://github.com/steffenbackes/sfED/blob/{commit}{path}@L{line}",
     sitename="TODO: details here",
     format=Documenter.HTML(;
-        prettyurl=get(ENV, "CI", nothing) == "true",
+        prettyurls=get(ENV, "CI", nothing) == "true",
         canonical="https://github.com/steffenbackes/sfED",
         assets=String[]
     ),
