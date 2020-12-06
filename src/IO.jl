@@ -54,22 +54,23 @@ function printEvalInfo(evallist::Array{Array{Float64,1},1},
 					   allstates::Array{Array{Array{Array{Int64,1},1},1},1}) #TODO: omg
 	Nmax = length(allstates)
 	E0 = minimum(first.(evallist))
+	perm = sortperm(first.(evallist))
 
 	printlimit = round(Int64,min(10, length(evallist)/2))
 
 	println("Eigenstates: (",printlimit," lowest and highest calculated)")
 	for i=vcat(1:printlimit, length(evallist)-printlimit:length(evallist))
-		E = evallist[i][1] -E0
-		N = round(Int64,evallist[i][2])
-		s = round(Int64,evallist[i][3])
+		E = evallist[perm][i][1] -E0
+		N = round(Int64,evallist[perm][i][2])
+		s = round(Int64,evallist[perm][i][3])
 		S = spinConfig(s,N,Nmax)
-		evstate = eveclist[i]
-		perm = sortperm( evstate, by=abs, rev=true )
+		evstate = eveclist[perm][i]
+		permV = sortperm( evstate, by=abs, rev=true )
 		@printf("E=%+10.5f, N=%3i, S=%+3i : ", E,N,S)
 		# print the three largest contributions to the Eigenvector
 		for j=1:min(2,length(evstate))
-			@printf( "%4.2f", abs(evstate[perm[j]])^2 ) 
-			print( "x",allstates[N+1][s][perm[j]],"  ")
+			@printf( "%4.2f", abs(evstate[permV[j]])^2 ) 
+			print( "x",allstates[N+1][s][permV[j]],"  ")
 		end
 		println(" ")
 		if (i==printlimit)

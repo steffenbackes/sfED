@@ -34,6 +34,14 @@ function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
 	  	 	         0 0 0 t;
 	               t 0 0 0;
 					   0 t 0 0]
+	elseif pModel.norb==6
+		# A B C trimer
+		tmatrix = -[0 0 t 0 0 0;
+	  	 	         0 0 0 t 0 0;
+	  	 	         t 0 0 0 t 0;
+	  	 	         0 t 0 0 0 t;
+	               0 0 t 0 0 0;
+					   0 0 0 t 0 0]
 	elseif pModel.norb==8
 		# A B plaquette
 		# C D
@@ -83,6 +91,20 @@ function getUJmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
 		           J 0 0 0;
 					  0 0 0 J;
 					  0 0 J 0]
+	elseif pModel.norb==6
+		# A B C trimer
+		Umatrix = [U Up 0 0 0 0; # we assume two orbitals per site
+		           Up U 0 0 0 0;
+		           0 0 U Up 0 0;
+		           0 0 Up U 0 0;
+					  0 0 0 0 U Up;
+					  0 0 0 0 Up U]
+		Jmatrix = [0 J 0 0 0 0;
+		           J 0 0 0 0 0;
+		           0 0 0 J 0 0;
+		           0 0 J 0 0 0;
+					  0 0 0 0 0 J;
+					  0 0 0 0 J 0]
 	elseif pModel.norb==8
 		# A B plaquette
 		# C D
@@ -386,15 +408,38 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 			
 			# save the pairs of eigvals and eigvecs, also the N,S quantum numbers
 			for i=1:min(pNumerics.nevalsPerSubspace,length(evals))
-				push!( evallist, [ evals[i], n, s ] )
+				push!( evallist, [ evals[i], n, s, spinConfig(s,n,Nmax) ] )
 				push!( eveclist, evecs[:,i] )
 			end
 			println("Done!")
 	
 			# now sort and trim the list of eigenvalues and vectors since we only want to keep nevalsTotalMax
-			perm = sortperm(first.(evallist))
-			evallist =copy( ( evallist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
-			eveclist =copy( ( eveclist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
+			#perm = sortperm(first.(evallist))
+			#evallist =copy( ( evallist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
+			#eveclist =copy( ( eveclist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
+
+			###########################################################################
+			# THIS IS STILL TESTING STATUS
+			i0 = argmin( first.(evallist) )
+			N0 = evallist[i0][2]
+			S0 = evallist[i0][4]
+
+			NSlist = [ [evallist[i][2],evallist[i][4]] for i=1:length(evallist)  ]
+			connectedSpace  = findall(x->(x==[N0-1,S0-1] || x==[N0+1,S0+1]), NSlist)
+			restSpace       = findall(x->(x!=[N0-1,S0-1] && x!=[N0+1,S0+1]), NSlist)
+
+			restEvals = evallist[restSpace]
+			restEvecs = eveclist[restSpace]
+
+			perm = sortperm(first.(restEvals))
+
+			take=min(pNumerics.nevalsPerSubspace,length(restEvals))
+			keep = max(0, pNumerics.nevalsTotalMax-take-length(connectedSpace) )
+			
+			evallist = vcat(  copy(restEvals[perm][1:take]) , copy(evallist[connectedSpace]), copy(restEvals[perm][take+1:min(keep,end)])   )
+			eveclist = vcat(  copy(restEvecs[perm][1:take]) , copy(eveclist[connectedSpace]), copy(restEvecs[perm][take+1:min(keep,end)])   )
+			###########################################################################
+
 			
 		end # s
 	end # n
