@@ -18,7 +18,7 @@ makedocs(;
 )
 
 deploydocs(;
-    branch="hg-pages",
+    branch="gh-pages",
     devbranch="main",
     devurl ="stable",
     repo="github.com/steffenbackes/sfED.git"
