@@ -1,3 +1,4 @@
+include("../src/params.jl")
 include("../src/states.jl")
 
 @testset "basic properties" begin
