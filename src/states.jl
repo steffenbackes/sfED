@@ -27,7 +27,7 @@ indexSpinConfig(S::Int64,n::Int,Nmax::Int)::Int64 = round(Int64,  (S + (Nmax/2-a
 
 total spin `S` of `state`.
 """
-getSpin2(state:Array{Int64,1}) = sum((2*(i%2)-1)*state[i] for i in 1:length(state))
+getSpin(state:Array{Int64,1}) = sum((2*(i%2)-1)*state[i] for i in 1:length(state))
 ########################################################################
 
 ########################################################################
