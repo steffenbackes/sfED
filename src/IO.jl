@@ -7,15 +7,18 @@ Writes a Green's function `G(norb,norb,nw)` in human readable (fixed column widt
 """
 function writeGF(filename::String,G::Array{Complex{Float64},3},mgrid)
     @assert length(mgrid) <= size(G,3)
+	
+	norb=size(G,1)
+
 	open(filename, "w") do outf
 		for n=1:length(mgrid)
 			ww = mgrid[n]
-            write(outf, rpad(ww,14) )
+			@printf(outf, "%.7E   ", ww)
 			for m1=1:norb
 				for m2=1:norb
 					reg = real(G[m1,m2,n])
 					img = imag(G[m1,m2,n])
-                    write(outf, "$(rpad(reg,14)) $(rpad(img,14))" )  # does one really have to do it like this??
+					@printf(outf, "%.7E  %.7E   ", reg, img)
 				end # m2
 			end # m1
 			write(outf, "\n" )
@@ -30,6 +33,7 @@ Print all states and N S quantum numbers
 """
 function printStateInfo(allstates::Array{Array{Array{Array{Int64,1},1},1},1})
 	println("We have the following states:")
+	Nmax = length(allstates)
 	for n=0:Nmax
 		for s=1:noSpinConfig(n,Nmax)
 			println("N=",n,", S=",spinConfig(s,n,Nmax))
@@ -48,6 +52,7 @@ Print the Eigenvalues and some info
 function printEvalInfo(evallist::Array{Array{Float64,1},1},
                        eveclist::Array{Array{Complex{Float64},1},1},
 					   allstates::Array{Array{Array{Array{Int64,1},1},1},1}) #TODO: omg
+	Nmax = length(allstates)
 	println("Eigenstates:")
 	for i=1:length(evallist)
 		E = evallist[i][1]

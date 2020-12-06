@@ -4,12 +4,15 @@
 Construct the noninteracting Green's function from onsite energy `eps`,
 hoppings between sites `i` and `j`, `tmatrix` and Matsubara grid `w`.
 """
-function getG0(eps::Array{Float64,1},tmatrix::Array{Float64,2},
-               
-					      w )
+function getG0(        eps::Array{Float64,1},
+                   tmatrix::Array{Float64,2},  
+					pSimulation::SimulationParameters,
+					          w::Array{ComplexF64,1} )
+	norb=size(tmatrix)[1]
+	nw = length(w)
 	gf0 = zeros(ComplexF64,norb,norb,nw)
 	for n=1:nw
-		gf0[:,:,n] = inv( I*(w[n] + mu) - Diagonal(eps[1:2:end]) - tmatrix ) # eps is defined for spins, so only take orbital part
+		gf0[:,:,n] = inv( I*(w[n] + pSimulation.mu) - Diagonal(eps[1:2:end]) - tmatrix ) # eps is defined for spins, so only take orbital part
 	end
 	return gf0
 end
@@ -90,12 +93,21 @@ Since we have spin degeneracy, we only calculate the up GF, so we annihilate one
 """
 function getGF( evallist::Array{Array{Float64,1},1},
                 eveclist::Array{Array{Complex{Float64},1},1},
-					allstates::Array{Array{Array{Array{Int64,1},1},1},1})
+					allstates::Array{Array{Array{Array{Int64,1},1},1},1},
+					pModel::ModelParameters,
+					pSimulation::SimulationParameters,
+					pFreq::FrequencyMeshes,
+					pNumerics::NumericalParameters)
+
+	norb=pModel.norb
+	Nmax=pModel.Nmax
+	beta = pSimulation.beta
+
 	NSvalues   = Int64[-1,-1,-1,-1]
 	cmatrix    = zeros(Int64,norb,1,1)
 	cdagmatrix = zeros(Int64,norb,1,1)
-	gf_w       = zeros(ComplexF64,norb,norb,nw)
-	gf_iw      = zeros(ComplexF64,norb,norb,nw)
+	gf_w       = zeros(ComplexF64,norb,norb,length(pFreq.wf))
+	gf_iw      = zeros(ComplexF64,norb,norb,length(pFreq.iwf))
 	evalContributions::Array{Array{Float64,1},1} = []
 
 	# First create a sortting for all Eigenstates in order of increasing N,S, which makes the GF generation more efficient
@@ -123,7 +135,7 @@ function getGF( evallist::Array{Array{Float64,1},1},
 			S2    = spinConfig(s2,N2,Nmax)
 	
 			# Exclude transitions too high in energy or all Eigenstates 2 which are not N-1,S-1 
-			if ( (exp(-beta*E1)+exp(-beta*E2))>cutoff && N2==N1-1 && S2==S1-1 )
+			if ( (exp(-beta*E1)+exp(-beta*E2))>pNumerics.cutoff && N2==N1-1 && S2==S1-1 )
 	
 				# If we have not been dealing with this N,S combination in the loop before, we need to generate the right Cmatrix and Cdagmatrix
 				if ( NSvalues!=[N1,N2,S1,S2] )
@@ -147,9 +159,9 @@ function getGF( evallist::Array{Array{Float64,1},1},
 				for m1=1:norb
 					# first the diagonal elements
 					overlap =  dot( evec1, cdagmatrix[m1,:,:]*evec2 ) * dot( evec2, cmatrix[m1,:,:]*evec1 )
-					if abs(overlap)>cutoff
-						gf_w[m1,m1,:]  += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( LinRange(wmin,wmax,nw) .+ (delta*im - E1 + E2) )
-						gf_iw[m1,m1,:] += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( ( 2 .* collect(1:nw) .-1).*(im*pi/beta) .+ (- E1 + E2) )
+					if abs(overlap)>pNumerics.cutoff
+						gf_w[m1,m1,:]  += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
+						gf_iw[m1,m1,:] += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
 						evalContributions[n1][4] += abs(overlap * (exp(-beta*E1)+exp(-beta*E2)))
 						evalContributions[n2][4] += abs(overlap * (exp(-beta*E1)+exp(-beta*E2)))
 					end
@@ -157,9 +169,9 @@ function getGF( evallist::Array{Array{Float64,1},1},
 					# then upper offdiagonal
 					for m2=m1+1:norb
 						overlap =  dot( evec1, cdagmatrix[m1,:,:]*evec2 ) * dot( evec2, cmatrix[m2,:,:]*evec1 )
-						if abs(overlap)>cutoff
-							gf_w[m1,m2,:]  += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( LinRange(wmin,wmax,nw) .+ (delta*im - E1 + E2) )
-							gf_iw[m1,m2,:] += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( ( 2 .* collect(1:nw) .-1).*(im*pi/beta) .+ (- E1 + E2) )
+						if abs(overlap)>pNumerics.cutoff
+							gf_w[m1,m2,:]  += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
+							gf_iw[m1,m2,:] += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
 							evalContributions[n1][4] += abs(overlap * (exp(-beta*E1)+exp(-beta*E2)))
 							evalContributions[n2][4] += abs(overlap * (exp(-beta*E1)+exp(-beta*E2)))
 						end
@@ -171,7 +183,7 @@ function getGF( evallist::Array{Array{Float64,1},1},
 	end # n1 loop
     println("\rdone!")
 	
-	# copy the offdiagonals
+	# copy the offdiagonals (not true copy in julia, just referencing but this is ok)
 	for m1=1:norb
 		for m2=m1+1:norb
 			gf_w[m2,m1,:] = gf_w[m1,m2,:]
@@ -180,8 +192,8 @@ function getGF( evallist::Array{Array{Float64,1},1},
 	end
 	
 	#normalize
-	gf_w ./= getZ(evallist)
-	gf_iw ./= getZ(evallist)
+	gf_w ./= getZ(evallist,beta)
+	gf_iw ./= getZ(evallist,beta)
 
 	return gf_w, gf_iw, evalContributions
 end 
@@ -193,7 +205,7 @@ Calculate the Selfenergy from `G0` and `G`
 """
 function getSigma(G0::Array{Complex{Float64},3}, G::Array{Complex{Float64},3})
 	sigma = zeros(ComplexF64,size(G))
-	for i=1:nw
+	for i=1:size(G)[3]
 		sigma[:,:,i]  = inv( G0[:,:,i]) - inv( G[:,:,i])
 	end
 	return sigma

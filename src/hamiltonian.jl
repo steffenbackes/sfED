@@ -1,39 +1,40 @@
 
 """
-    getEps(smallValue)
+    getEps(pNumerics,pModel)
 
 Return the local orbital levels, define them by hand here. Values are perturbed by `smallValue`
 TODO: this should be overloaded to accept text file or command line inputs.
 """
-function getEps(smallValue::Float64)
-	eps = zeros(Float64,Nmax)
-	for i=0:norb-1              # Just shift one orbital down, the other up by +-1
+function getEps(pNumerics::NumericalParameters, pModel::ModelParameters)
+	eps = zeros(Float64,pModel.Nmax)
+	for i=0:pModel.norb-1              # Just shift one orbital down, the other up by +-1
 		eps[2*i+1] = 1.0*(-1)^i    # up spin
 		eps[2*i+2] = eps[2*i+1]    #dn spin
 	end
 
 	# add a very small random term to each local level to lift degeneracy and improve numerical stability
-	for i=1:Nmax
-		eps[i] += rand([-1,1]) * rand(Float64) * smallValue
+	for i=1:pModel.Nmax
+		eps[i] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
 	end
 	return eps
 end
 
 """
-    getTmatrix()
+    getTmatrix(pModel)
 
 Return the hoppingmatrix, defined by hand here
 TODO: this should be overloaded to accept text file or command line inputs.
 """
-function getTmatrix()
-    tmatrix = Array{Float64}(undef,norb,norb)
-	if norb==4
+function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
+   tmatrix = Array{Float64}(undef,pModel.norb,pModel.norb)
+	t = pSimulation.t
+	if pModel.norb==4
 		# A B dimer
 		tmatrix = -[0 0 t 0;
 	  	 	         0 0 0 t;
 	               t 0 0 0;
 					   0 t 0 0]
-	elseif norb==8
+	elseif pModel.norb==8
 		# A B plaquette
 		# C D
 		tmatrix = -[0 0 t 0 t 0 0 0;
@@ -45,29 +46,34 @@ function getTmatrix()
 	               0 0 t 0 t 0 0 0;
 					   0 0 0 t 0 t 0 0]
     else
-        error("No arbitrary t matrix supported yet!")
+        println("No t matrix implemented for norb=",pModel.norb,", set hopping matrix to zero!")
+		  tmatrix = zeros(Float64,pModel.norb,pModel.norb)
 	end
 	return tmatrix
 end
 
 """
-    getUJmatrix()
+    getUJmatrix(pModel)
 
 Return the Coulomb interaction matrices, defined by hand here
 TODO: this should be overloaded to accept text file or command line inputs.
 """
-function getUJmatrix()
-    Umatrix = Array{Float64}(undef,norb,norb)
-    Jmatrix = Array{Float64}(undef,norb,norb)
-	if (norb==1)
+function getUJmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
+   Umatrix = Array{Float64}(undef,pModel.norb,pModel.norb)
+   Jmatrix = Array{Float64}(undef,pModel.norb,pModel.norb)
+	U = pSimulation.U
+	Up = pSimulation.Up
+	J = pSimulation.J
+
+	if (pModel.norb==1)
 		Umatrix = [U]
 		Jmatrix = [0]
-	elseif (norb==2)
+	elseif (pModel.norb==2)
 		Umatrix = [U Up;
 					  Up U]
 		Jmatrix = [0 J;
 					  J 0]
-	elseif norb==4
+	elseif pModel.norb==4
 		# A B dimer
 		Umatrix = [U Up 0 0;   # we assume two orbitals per site
 		           Up U 0 0;
@@ -77,7 +83,7 @@ function getUJmatrix()
 		           J 0 0 0;
 					  0 0 0 J;
 					  0 0 J 0]
-	elseif norb==8
+	elseif pModel.norb==8
 		# A B plaquette
 		# C D
 		Umatrix = [U Up 0 0 0 0 0 0; # we assume two orbitals per site
@@ -97,7 +103,7 @@ function getUJmatrix()
 					  0 0 0 0 0 0 0 J;
 					  0 0 0 0 0 0 J 0]
     else
-        error("No arbitrary UJ matrix supported yet!")
+        println("No UJ matrix implemented for norb=",pModel.norb,", set interaction to zero!")
 	end
 	return Umatrix,Jmatrix
 end
@@ -109,12 +115,14 @@ return the hopping contribution for states `<i| |j>`
 """
 function getHopping( istate::Array{Int64,1},
                      jstate::Array{Int64,1},
-					 tmatrix::Array{Float64,2})
+  					      tmatrix::Array{Float64,2},
+							pNumerics::NumericalParameters)
 	# we act c^dagger c on the state |j> and check overlap with <i|
+	norb = size(tmatrix)[1]
 	htmp = 0.0
 	for m1=1:norb
 		for m2=1:norb
-			if ( abs(tmatrix[m1,m2]) > cutoff && m1!=m2 )   # no hopping for same orbitals (this is in eps)
+			if ( abs(tmatrix[m1,m2]) > pNumerics.cutoff && m1!=m2 )   # no hopping for same orbitals (this is in eps)
 				tval = tmatrix[m1,m2]
 				for s=0:1 # spin
 					a1 = (m1-1)*2+s  +1
@@ -136,7 +144,9 @@ return the  density density part of the Coulomb interaction contribution
 """
 function getUdensity(  state::Array{Int64,1},
                      Umatrix::Array{Float64,2},
-							Jmatrix::Array{Float64,2})
+							Jmatrix::Array{Float64,2},
+							pNumerics::NumericalParameters)
+	norb = size(Umatrix)[1]
 	htmp = 0.0
 	for m1=1:norb
 		n1up = state[2*m1-1]
@@ -144,7 +154,7 @@ function getUdensity(  state::Array{Int64,1},
 		htmp += Umatrix[m1,m1]*n1up*n1dn
 
 		for m2=m1+1:norb
-			if abs(Umatrix[m1,m2]) > cutoff
+			if abs(Umatrix[m1,m2]) > pNumerics.cutoff
 				n2up = state[2*m2-1]
 				n2dn = state[2*m2-0]
 				htmp += Umatrix[m1,m2]*n1up*n2dn
@@ -164,11 +174,13 @@ return the spin-flip and pair-hopping part of the interaction contribution
 """
 function getUnondensity( istate::Array{Int64,1},
                          jstate::Array{Int64,1},
-						 Jmatrix::Array{Float64,2})
+				  		      Jmatrix::Array{Float64,2},
+								pNumerics::NumericalParameters)
+	norb = size(Jmatrix)[1]
 	htmp = 0.0
 	for m1=1:norb
 		for m2=1:norb
-			if ( abs(Jmatrix[m1,m2]) > cutoff && m1!=m2 )
+			if ( abs(Jmatrix[m1,m2]) > pNumerics.cutoff && m1!=m2 )
 				Jval = Jmatrix[m1,m2]
 
             # spin flip !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -243,8 +255,8 @@ Calculate the matrix element for a two particle operator given the creation and 
 with indices `c1`, `c2` and `a3`,`a4`.
 """
 function getMatrixElem2Particle(c1::Int64,c2::Int64,
-							    a3::Int64,a4::Int64,
-								istate::Array{Int64,1},jstate::Array{Int64,1} )
+   							        a3::Int64,a4::Int64,
+								        istate::Array{Int64,1},jstate::Array{Int64,1} )
 	tmp = 0.0
 	if (jstate[a4]==1 && jstate[c2]==0  &&      # check that there are two particles to annihilate in |j>
 		 jstate[a3]==1 && jstate[c1]==0  &&      # and space for two to create in <i|
@@ -278,7 +290,9 @@ over precomputed `states`.
 """
 function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 						Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2}, 
-						states::Array{Array{Int64,1},1})::SparseMatrixCSC{Complex{Float64},Int64}
+						mu::Float64,
+						states::Array{Array{Int64,1},1},
+						pNumerics::NumericalParameters)::SparseMatrixCSC{Complex{Float64},Int64}
 
 	# Set up index array for the sparse Hamiltonian Matrix
 	HamiltonianElementsI = Int64[]
@@ -291,7 +305,7 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 		Hiitmp += sum(eps .* states[i] ) # onsite levels
 	
 		# get Density-Density interaction terms
-		Hiitmp += getUdensity(states[i],Umatrix,Jmatrix)
+		Hiitmp += getUdensity(states[i],Umatrix,Jmatrix,pNumerics)
 	
 		# Now we can set the matrix element
 		push!( HamiltonianElementsI, i )
@@ -303,10 +317,10 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 			Hijtmp = 0.0
 	
 			# Hopping terms ###########################################
-			Hijtmp += getHopping(states[i], states[j], tmatrix)
+			Hijtmp += getHopping(states[i], states[j], tmatrix,pNumerics)
 	
 			# Pair-hopping and spin-flip terms of the Coulomb interaction
-			Hijtmp += getUnondensity(states[i], states[j], Jmatrix)
+			Hijtmp += getUnondensity(states[i], states[j], Jmatrix,pNumerics)
 	
 			# Now we can set the matrix element
 			push!( HamiltonianElementsI, i )
@@ -329,7 +343,8 @@ end
 
 Diagonalize a given `Hamiltonian`. Eigenvalues will be cast to real, since the Hamiltonian is hermitian.
 """
-function getEvalEvecs(Hamiltonian::SparseMatrixCSC{Complex{Float64},Int64} )
+function getEvalEvecs(Hamiltonian::SparseMatrixCSC{Complex{Float64},Int64},
+                      nevalsPerSubspace::Int64 )
 	dim = size(Hamiltonian)[1]
 
 	if  dim<10 || nevalsPerSubspace>0.7*dim    # Full diagonalization if matrix is small 
@@ -349,25 +364,28 @@ end
 Create the N,S submatrices of the Hamiltonian, solve it and return the Eigenvalues and Vectors in a List
 """
 function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
-						Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2}, 
-					 	allstates::Array{Array{Array{Array{Int64,1},1},1},1})
+						Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
+						mu::Float64,
+					 	allstates::Array{Array{Array{Array{Int64,1},1},1},1},
+						pNumerics::NumericalParameters)
 	evallist::Array{Array{Float64,1},1}          = [] # this list stores the lowest of the smallest eigenvalues and N, S quantum numbers
 	eveclist::Array{Array{Complex{Float64},1},1} = [] # this list stores the lowest of the smallest eigenvectors
 
+	Nmax = size(allstates)[1]-1
 	for n=0:Nmax
 		for s=1:noSpinConfig(n,Nmax)
 			dim = length(allstates[n+1][s])
 			print("Constructing Hamiltonian(",dim,"x",dim,"), N=",n,", S=",spinConfig(s,n,Nmax),"... ")
 
 			# now get the Hamiltonian submatrix spanned by all states <i| |j> in the N,S space (sparse matrix)
-			Hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,allstates[n+1][s])
+			Hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,allstates[n+1][s],pNumerics)
 			println("Done!")
 	
 			print("Diagonalizing Hamiltonian... ")
-			evals,evecs = getEvalEvecs(Hamiltonian)
+			evals,evecs = getEvalEvecs(Hamiltonian, pNumerics.nevalsPerSubspace)
 			
 			# save the pairs of eigvals and eigvecs, also the N,S quantum numbers
-			for i=1:min(nevalsPerSubspace,length(evals))
+			for i=1:min(pNumerics.nevalsPerSubspace,length(evals))
 				push!( evallist, [ evals[i], n, s ] )
 				push!( eveclist, evecs[:,i] )
 			end
@@ -375,8 +393,8 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 	
 			# now sort and trim the list of eigenvalues and vectors since we only want to keep nevalsTotalMax
 			perm = sortperm(first.(evallist))
-			evallist =copy( ( evallist[perm] )[1:min(nevalsTotalMax,length(evallist))] )
-			eveclist =copy( ( eveclist[perm] )[1:min(nevalsTotalMax,length(evallist))] )
+			evallist =copy( ( evallist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
+			eveclist =copy( ( eveclist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
 			
 		end # s
 	end # n
@@ -389,7 +407,7 @@ end
 
 Calculate partition function from the eigenvalues in `evallist`.
 """
-function getZ(evallist::Array{Array{Float64,1},1})
+function getZ(evallist::Array{Array{Float64,1},1}, beta::Float64)
 	evals = first.(evallist)
 	E0 = minimum(evals)
 	return sum( exp.(-beta.*( evals .-E0)) )  # subtract E0 to avoid overflow

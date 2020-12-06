@@ -32,7 +32,11 @@ getSpin(state::Array{Int64,1}) = sum((2*(i%2)-1)*state[i] for i in 1:length(stat
 
 ########################################################################
 # Here we create the array that stores all states as an integer array sorted by N,S quantum numbers
-function generateStates()
+function generateStates(pModel::ModelParameters)
+
+	Nmax = pModel.Nmax
+	Nstates = pModel.Nstates
+
 	# Create an empty list that will store all states, sorted for given particle number and spin
 	allstates::Array{Array{Array{Array{Int64,1},1},1},1} = []
 	for n=0:Nmax
