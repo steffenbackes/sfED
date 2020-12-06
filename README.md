@@ -1,1 +1,1 @@
-# edsolver_julia
+# sfED (superfast julia ED solver)
