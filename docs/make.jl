@@ -5,7 +5,7 @@ push!(LOAD_PATH, "../src/")
 makedocs(;
     modules=[sfED],
     authors="Steffen Backes <mail@mail.mm> and Contributers",
-    repo="https://github.com/steffenbackes/sfED/blob/{commit}{path}@L{line}",
+    repo="https://github.com/steffenbackes/sfED/blob/{commit}{path}#L{line}",
     sitename="TODO: details here",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", nothing) == "true",
