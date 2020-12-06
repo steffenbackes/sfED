@@ -2,39 +2,32 @@
 """
     noSpinConfig(n, Nmax)
 
-Return numnber of configurations with different total spin S possible for given n and nMax
+Number of configurations with different total spin S possible for given `n` and `Nmax`.
 """
-function noSpinConfig(n::Int64, Nmax::Int64)::Int64
-	round(Int64,  Nmax/2-abs(n-Nmax/2)+1 )
-end 
-########################################################################
+noSpinConfig(n::Int64, Nmax::Int64)::Int64 = round(Int64,  Nmax/2-abs(n-Nmax/2)+1 )
 
-########################################################################
-# Return the i-th possible total spin value S for given n,nMax. i starts at 1 (eg S=-2,0,2) 
-# Our electrons have spin +- 1 !!!!!!!!!!!!!!!!!!!
-function spinConfig(i::Int64,n::Int64,Nmax::Int64)::Int64
-	 round(Int64, -(Nmax/2-abs(n-Nmax/2)) + (i-1)*2 )
-end
-########################################################################
+"""
+    spinConfig(i,n,Nmax)
 
-########################################################################
-# Return the index i corresponding to a spin config S for given n,nMax
-function indexSpinConfig(S::Int64,n::Int,Nmax::Int)::Int64
-	round(Int64,  ( S + (Nmax/2-abs(n-Nmax/2)) )/2 +1 )
-end
-########################################################################
+`i`-th possible total spin value S for given `n`, `nMax`. i starts at 1 (eg S=-2,0,2) 
+Our electrons have spin +- 1 !!!!!!!!!!!!!!!!!!!
+"""
+spinConfig(i::Int64,n::Int64,Nmax::Int64)::Int64 = round(Int64, -(Nmax/2-abs(n-Nmax/2)) + (i-1)*2 )
+
+"""
+    indexSpinConfig(S,n,Nmax)
+
+Index `i` corresponding to a spin config S for given n,nMax
+"""
+indexSpinConfig(S::Int64,n::Int,Nmax::Int)::Int64 = round(Int64,  (S + (Nmax/2-abs(n-Nmax/2)))/2 + 1 )
 
 
-########################################################################
-# this function returns the total spin S of a given state
-function getSpin(state::Array{Int64,1})
-	# Array to calculate the total spin [1,-1,1,-1, etc]
-	spinsign = Int64.( ones(Nmax) )
-	for i=2:2:Nmax
-		spinsign[i] = Int64(-1)
-	end
-	return sum(spinsign .* state)
-end
+"""
+    getSpin(states)
+
+total spin `S` of `state`.
+"""
+getSpin2(state:Array{Int64,1}) = sum((2*(i%2)-1)*state[i] for i in 1:length(state))
 ########################################################################
 
 ########################################################################
