@@ -9,7 +9,7 @@ makedocs(;
     sitename="TODO: details here",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", nothing) == "true",
-        canonical="https://github.com/steffenbackes/sfED",
+        canonical="https://steffenbackes.github.io/sfED",
         assets=String[]
     ),
     pages=[
