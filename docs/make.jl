@@ -21,5 +21,5 @@ deploydocs(;
     branch="hg-pages",
     devbranch="main",
     devurl ="stable",
-    repo="https://github.com/steffenbackes/sfED"
+    repo="https://github.com/steffenbackes/sfED.git"
 )
