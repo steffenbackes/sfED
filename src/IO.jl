@@ -53,9 +53,13 @@ function printEvalInfo(evallist::Array{Array{Float64,1},1},
                        eveclist::Array{Array{Complex{Float64},1},1},
 					   allstates::Array{Array{Array{Array{Int64,1},1},1},1}) #TODO: omg
 	Nmax = length(allstates)
-	println("Eigenstates:")
-	for i=1:length(evallist)
-		E = evallist[i][1]
+	E0 = minimum(first.(evallist))
+
+	printlimit = round(Int64,min(10, length(evallist)/2))
+
+	println("Eigenstates: (",printlimit," lowest and highest calculated)")
+	for i=vcat(1:printlimit, length(evallist)-printlimit:length(evallist))
+		E = evallist[i][1] -E0
 		N = round(Int64,evallist[i][2])
 		s = round(Int64,evallist[i][3])
 		S = spinConfig(s,N,Nmax)
@@ -68,6 +72,11 @@ function printEvalInfo(evallist::Array{Array{Float64,1},1},
 			print( "x",allstates[N+1][s][perm[j]],"  ")
 		end
 		println(" ")
+		if (i==printlimit)
+			println(".")
+			println(".")
+			println(".")
+		end
 	end
 end
 
@@ -124,4 +133,25 @@ function writeEvalContributions(filename::String, evalContributions::Array{Array
 			write(outf, "$n1 $E  $val  \n" )
 		end
 	end # close
+end
+
+"""
+    printGFnorm(gfdiagnorm)
+
+Print the calculated normalization of the diagonal Green's function elements
+"""
+function printGFnorm(gfdiagnorm::Array{Float64,1}, highestEval::Float64)
+	println("Obtained the following normalization of the Green's function for all orbitals:")
+	for n in gfdiagnorm
+		@printf( "%5.3f ", n ) 
+	end
+	println(" ")
+	if any(gfdiagnorm .< 0.95)
+		@printf("Only %3i%% of all states are in the energy window [%+4.1f,%+4.1f] \n",minimum(gfdiagnorm)*100,-highestEval,highestEval)
+		println("!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		println("!!! Green's function is not normalized, increase Energy cutoff !!!")
+		println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	else
+		@printf("%5.1f%% of all states are in the energy window [%+4.1f,%+4.1f] \n",minimum(gfdiagnorm)*100,-highestEval,highestEval)
+	end
 end

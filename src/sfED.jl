@@ -26,7 +26,7 @@ function example_run()
 					 			   iwmax=80.0,
 								   beta=pSimulation.beta)
 
-	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=30, nevalsTotalMax=200)
+	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=20, nevalsTotalMax=200)
 
 	println( "We have $(pModel.norb) Orbitals, #$(pModel.Nstates) states and $(pModel.Nmax) max. number of electrons" )
 	

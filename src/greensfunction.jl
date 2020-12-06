@@ -31,11 +31,13 @@ now just determine the transformation when acting the annihilation operator `ann
 """
 function getCmatrix(     anni::Int64, 
                     subspace2::Array{Array{Int64,1},1}, 
-						  subspace1::Array{Array{Int64,1},1})
+						  subspace1::Array{Array{Int64,1},1})::SparseMatrixCSC{Int64,Int64}
 	dim1 = length(subspace1)
 	dim2 = length(subspace2)
+	indexI = Int64[]
+	indexJ = Int64[]
+	val = Int64[]
 
-	cmatrix = zeros(Int64,dim2,dim1)
 	# now annihilate the particle in all basis states and find the corresponding state in the N-1,S-1 space
 	for j=1:dim1
 		if subspace1[j][anni] == 1   # if there is a particle to annihilate..
@@ -45,10 +47,12 @@ function getCmatrix(     anni::Int64,
 
 			# now find this state in the smaller subspace
 			i = findfirst(map(x-> all(x .== state), subspace2))
-			cmatrix[i,j] = a1sgn
+			push!(indexI,i)
+			push!(indexJ,j)
+			push!(val,a1sgn)
 		end
 	end # j
-	return cmatrix
+	return sparse(indexI,indexJ,val, dim2,dim1)
 end
 
 """
@@ -63,11 +67,13 @@ now just determine the transformation when acting the creation operator `crea` o
 """
 function getCdagmatrix(     crea::Int64, 
                        subspace1::Array{Array{Int64,1},1}, 
-							  subspace2::Array{Array{Int64,1},1})
+							  subspace2::Array{Array{Int64,1},1})::SparseMatrixCSC{Int64,Int64}
 	dim1 = length(subspace1)
 	dim2 = length(subspace2)
+	indexI = Int64[]
+	indexJ = Int64[]
+	val = Int64[]
 
-	cdagmatrix = zeros(Int64,dim1,dim2)
 	# now create the particle in all basis states and find the corresponding state in the N,S space
 	for j=1:dim2
 		if subspace2[j][crea] == 0   # if there is space to create one particle...
@@ -77,15 +83,17 @@ function getCdagmatrix(     crea::Int64,
 
 			# now find this state in the N,S subspace
 			i = findfirst(map(x-> all(x .== state), subspace1))
-			cdagmatrix[i,j] = c1sgn
+			push!(indexI,i)
+			push!(indexJ,j)
+			push!(val,c1sgn)
 		end
 	end # j
-	return cdagmatrix
+	return sparse(indexI,indexJ,val, dim1,dim2)
 end
 #######################################################################
 
 """
-    getGF(evallist, eveclist, allstates)
+    getGF(evallist, eveclist, allstates, pModel, pSimulation, pFreq, pNumerics)
 
 Evaluation of the Lehmann representation for the interacting finite-temperature Green's function
 We sum over all Eigenstates `evallist` with electron number N and all other eigenstates n2 with electron number N-1
@@ -104,11 +112,12 @@ function getGF( evallist::Array{Array{Float64,1},1},
 	beta = pSimulation.beta
 
 	NSvalues   = Int64[-1,-1,-1,-1]
-	cmatrix    = zeros(Int64,norb,1,1)
-	cdagmatrix = zeros(Int64,norb,1,1)
+	cmatrix    = SparseMatrixCSC{Int64,Int64}[]
+	cdagmatrix = SparseMatrixCSC{Int64,Int64}[]
 	gf_w       = zeros(ComplexF64,norb,norb,length(pFreq.wf))
 	gf_iw      = zeros(ComplexF64,norb,norb,length(pFreq.iwf))
 	evalContributions::Array{Array{Float64,1},1} = []
+	gfdiagnorm = zeros(Float64,norb)                            # check normalization of GF
 
 	# First create a sortting for all Eigenstates in order of increasing N,S, which makes the GF generation more efficient
 	NSperm = getNSperm(evallist)
@@ -116,8 +125,8 @@ function getGF( evallist::Array{Array{Float64,1},1},
 	E0 = minimum( first.(evallist) )
 
 	for n1=1:length(evallist)
-	    if n1%(Int64(length(evallist)/10)) == 0
-            print("\r"*lpad(Int64(n1*100.0/length(evallist)),4)*"%")
+	    if n1%(round(Int64,length(evallist)/10)) == 0
+            print("\r"*lpad(round(Int64,n1*100.0/length(evallist)),4)*"%")
 		end
 
 		E1    = evallist[NSperm[n1]][1] -E0     # shift by E0 to avoid overflow
@@ -133,9 +142,11 @@ function getGF( evallist::Array{Array{Float64,1},1},
 			s2    = round(Int64,evallist[NSperm[n2]][3])
 			evec2 = eveclist[NSperm[n2]]
 			S2    = spinConfig(s2,N2,Nmax)
+
+			expFac = exp(-beta*E1)+exp(-beta*E2)
 	
 			# Exclude transitions too high in energy or all Eigenstates 2 which are not N-1,S-1 
-			if ( (exp(-beta*E1)+exp(-beta*E2))>pNumerics.cutoff && N2==N1-1 && S2==S1-1 )
+			if ( expFac > pNumerics.cutoff && N2==N1-1 && S2==S1-1 )
 	
 				# If we have not been dealing with this N,S combination in the loop before, we need to generate the right Cmatrix and Cdagmatrix
 				if ( NSvalues!=[N1,N2,S1,S2] )
@@ -144,13 +155,13 @@ function getGF( evallist::Array{Array{Float64,1},1},
 					# we need to generate cmatrix and cdagmatrix for all orbitals
 					dim1 = length(allstates[N1+1][s1])
 					dim2 = length(allstates[N2+1][s2])
-					cmatrix    = zeros(Int64,norb,dim2,dim1)  # go from subspace 1 to 2 by annihilation
-					cdagmatrix = zeros(Int64,norb,dim1,dim2)  # go from subspace 2 to 1 by creation
+					cmatrix    = SparseMatrixCSC{Int64,Int64}[]   # go from subspace 1 to 2 by annihilation
+					cdagmatrix = SparseMatrixCSC{Int64,Int64}[]   # go from subspace 2 to 1 by creation
 					for m1=1:norb
 						c1 = 2*m1-1
 						a1 = 2*m1-1
-						cmatrix[m1,:,:]    =    getCmatrix(a1, allstates[N2+1][s2], allstates[N1+1][s1])
-						cdagmatrix[m1,:,:] = getCdagmatrix(c1, allstates[N1+1][s1], allstates[N2+1][s2])
+						push!( cmatrix,       getCmatrix(a1, allstates[N2+1][s2], allstates[N1+1][s1]) )
+						push!( cdagmatrix, getCdagmatrix(c1, allstates[N1+1][s1], allstates[N2+1][s2]) )
 					end # m1 loop
 				end # if we need to update cmatrix,cdagmatrix
 	
@@ -158,22 +169,25 @@ function getGF( evallist::Array{Array{Float64,1},1},
 				# Obtain all matrix elements
 				for m1=1:norb
 					# first the diagonal elements
-					overlap =  dot( evec1, cdagmatrix[m1,:,:]*evec2 ) * dot( evec2, cmatrix[m1,:,:]*evec1 )
+					evec1cdagevec2 = dot( evec1, cdagmatrix[m1]*evec2 )  # we can reuse this result
+
+					overlap =  evec1cdagevec2 * dot( evec2, cmatrix[m1]*evec1 ) * expFac # include the Boltzmann terms
 					if abs(overlap)>pNumerics.cutoff
-						gf_w[m1,m1,:]  += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
-						gf_iw[m1,m1,:] += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
-						evalContributions[n1][4] += abs(overlap * (exp(-beta*E1)+exp(-beta*E2)))
-						evalContributions[n2][4] += abs(overlap * (exp(-beta*E1)+exp(-beta*E2)))
+						gf_w[m1,m1,:]  += overlap ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
+						gf_iw[m1,m1,:] += overlap ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
+						evalContributions[n1][4] += abs(overlap)
+						evalContributions[n2][4] += abs(overlap)
+						gfdiagnorm[m1] += real(overlap)
 					end
 	
 					# then upper offdiagonal
 					for m2=m1+1:norb
-						overlap =  dot( evec1, cdagmatrix[m1,:,:]*evec2 ) * dot( evec2, cmatrix[m2,:,:]*evec1 )
+						overlap =  evec1cdagevec2 * dot( evec2, cmatrix[m2]*evec1 ) * expFac # include the Boltzmann terms
 						if abs(overlap)>pNumerics.cutoff
-							gf_w[m1,m2,:]  += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
-							gf_iw[m1,m2,:] += overlap * (exp(-beta*E1)+exp(-beta*E2)) ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
-							evalContributions[n1][4] += abs(overlap * (exp(-beta*E1)+exp(-beta*E2)))
-							evalContributions[n2][4] += abs(overlap * (exp(-beta*E1)+exp(-beta*E2)))
+							gf_w[m1,m2,:]  += overlap ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
+							gf_iw[m1,m2,:] += overlap ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
+							evalContributions[n1][4] += abs(overlap)
+							evalContributions[n2][4] += abs(overlap)
 						end
 					end # m2 loop
 				end # m1 loop
@@ -192,8 +206,16 @@ function getGF( evallist::Array{Array{Float64,1},1},
 	end
 	
 	#normalize
+	gfdiagnorm ./= getZ(evallist,beta)
 	gf_w ./= getZ(evallist,beta)
 	gf_iw ./= getZ(evallist,beta)
+
+	# normalize the Matsubara GF tail so that the Dyson equation works for the Selfenergy when the normalization is slightly too small
+	for m1=1:norb
+		gf_iw[m1,m1,:] ./= gfdiagnorm[m1]
+	end
+
+	printGFnorm(gfdiagnorm, maximum( first.(evallist) )-E0)
 
 	return gf_w, gf_iw, evalContributions
 end 
