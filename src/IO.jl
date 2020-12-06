@@ -91,7 +91,7 @@ function writeEvalContributionsSectors(filename::String, evalContributions::Arra
 			N = round(Int64, evalContributions[perm[n1]][1])
 			S = round(Int64, evalContributions[perm[n1]][2])
 			E = evalContributions[perm[n1]][3]
-			if writelabel ==1
+			if writelabel == 1
 				write(outf, "$n1  $val $E ($N,$S) \n" )
 			else
 				write(outf, "$n1  $val $E \n" )
