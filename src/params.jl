@@ -1,8 +1,23 @@
+#typedefs
+const CAmatrix    = SparseMatrixCSC{Int8,Int64}   # matrix type for creation/annihilation matrix
+const Hamiltonian = SparseMatrixCSC{Complex{Float32},Int64}   # matrix type for Hamiltonian matrix
+
+const FockElement = Int8                                  # one number element of a Fock state
+const Fockstate   = Array{FockElement,1}                  # The standard Fock state e.g. [00101011] 
+const NSstates    = Array{Array{Array{Fockstate,1},1},1}  # An array of arrays for all Fock states for Quantum numbers N,S: typeof( allstates[N][S][i] )=Fockstate
+
+const Eigenvalue        = Float32             
+const Eigenvector       = Array{Complex{Float32},1}
+const EigenvectorMatrix = Array{Complex{Float32},2}
+
+const FrequencyMesh     = Array{Float32,1}
+const FrequencyMeshCplx = Array{Complex{Float32},1}
+const SingleParticleFunction = Array{Complex{Float32},3}
 
 struct ModelParameters
-	norb   ::Int64     # Number of Orbitals
-	Nmax   ::Int64     # Maximal number of electrons=2*norb
-	Nstates::Int64     # Total number of possible Fock states=4^norb  (0,up,dn,updn for each state)
+	norb   ::UInt32    # Number of Orbitals
+	Nmax   ::UInt32    # Maximal number of electrons=2*norb
+	Nstates::UInt64     # Total number of possible Fock states=4^norb  (0,up,dn,updn for each state)
 
 	#Constructor
 	ModelParameters(;norb) = new(norb, 2*norb, 4^norb)
@@ -23,8 +38,8 @@ end
 struct NumericalParameters
 	delta            ::Float64   # broadening parameter, we work above the real axis at w+im*delta
 	cutoff           ::Float64   # numerical cutoff for things like Boltzmann weights or other things
-	nevalsPerSubspace::Int64     # how much eigenvalues to obtain for each subspace (affects ARPACK directly)
-	nevalsTotalMax   ::Int64     # how much eigenvalues to keep in total from all subspaces (affects mostly memory and Green's function)
+	nevalsPerSubspace::UInt64     # how much eigenvalues to obtain for each subspace (affects ARPACK directly)
+	nevalsTotalMax   ::UInt64     # how much eigenvalues to keep in total from all subspaces (affects mostly memory and Green's function)
 
 	NumericalParameters(;delta,cutoff,nevalsPerSubspace,nevalsTotalMax) = new(delta,cutoff,nevalsPerSubspace,nevalsTotalMax)
 end
@@ -35,11 +50,11 @@ end
 
 struct FrequencyMeshes
 	# Real frequency mesh
-	wf::Array{Float64,1}   # frequency mesh
+	wf::FrequencyMesh   # frequency mesh
 
 	# Fermionic Matsubara frequency mesh
-	iwf::Array{Float64,1} # frequency mesh
+	iwf::FrequencyMesh # frequency mesh
 
 	FrequencyMeshes(;nw,wmin,wmax,iwmax,beta) = new( [wmin+n*(wmax-wmin)/nw for n=0:nw-1], 
-	                                                [(2*n+1)*pi/beta for n=0:round(Int64, (iwmax*beta/pi-1)/2)-1] )
+	                                                [(2*n+1)*pi/beta for n=0:round(Int32, (iwmax*beta/pi-1)/2)-1] )
 end

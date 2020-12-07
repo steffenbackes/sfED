@@ -39,8 +39,8 @@ function example_run()
 	Umatrix,Jmatrix = getUJmatrix(pModel,pSimulation)
 	
 	println("Create noninteracting single-particle Green's function...")
-	gf0_w  = getG0(eps,tmatrix,pSimulation,pFreq.wf .+ im*pNumerics.delta )      # real frequencies
-	gf0_iw = getG0(eps,tmatrix,pSimulation,im*pFreq.iwf )              # Matsubara frequencies
+	gf0_w  = getG0(eps,tmatrix,pSimulation,FrequencyMeshCplx(pFreq.wf .+ im*pNumerics.delta) )    # real frequencies
+	gf0_iw = getG0(eps,tmatrix,pSimulation,FrequencyMeshCplx(im*pFreq.iwf) )                      # Matsubara frequencies
 	writeGF("gf0_w.dat",gf0_w,pFreq.wf)
 	writeGF("gf0_iw.dat",gf0_iw, pFreq.iwf )
 	

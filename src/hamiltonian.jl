@@ -135,8 +135,8 @@ end
 
 return the hopping contribution for states `<i| |j>`
 """
-function getHopping( istate::Array{Int64,1},
-                     jstate::Array{Int64,1},
+function getHopping( istate::Fockstate,
+                     jstate::Fockstate,
   					      tmatrix::Array{Float64,2},
 							pNumerics::NumericalParameters)
 	# we act c^dagger c on the state |j> and check overlap with <i|
@@ -164,7 +164,7 @@ end
 
 return the  density density part of the Coulomb interaction contribution
 """
-function getUdensity(  state::Array{Int64,1},
+function getUdensity(  state::Fockstate,
                      Umatrix::Array{Float64,2},
 							Jmatrix::Array{Float64,2},
 							pNumerics::NumericalParameters)
@@ -194,8 +194,8 @@ end
 
 return the spin-flip and pair-hopping part of the interaction contribution
 """
-function getUnondensity( istate::Array{Int64,1},
-                         jstate::Array{Int64,1},
+function getUnondensity( istate::Fockstate,
+                         jstate::Fockstate,
 				  		      Jmatrix::Array{Float64,2},
 								pNumerics::NumericalParameters)
 	norb = size(Jmatrix)[1]
@@ -235,8 +235,8 @@ with indices `c1` and `a1` repsectively.
 """
 function getMatrixElem1Particle(c1::Int64,
                                 a1::Int64,
-							    istate::Array{Int64,1},
-							    jstate::Array{Int64,1})
+							    istate::Fockstate,
+							    jstate::Fockstate)
 	tmp = 0.0
    # check that there is a particle to annihilate and an empty state to create when going j->i,
 	# and that the reverse holds for the <i| state
@@ -278,7 +278,8 @@ with indices `c1`, `c2` and `a3`,`a4`.
 """
 function getMatrixElem2Particle(c1::Int64,c2::Int64,
    							        a3::Int64,a4::Int64,
-								        istate::Array{Int64,1},jstate::Array{Int64,1} )
+								        istate::Fockstate,
+										  jstate::Fockstate )
 	tmp = 0.0
 	if (jstate[a4]==1 && jstate[c2]==0  &&      # check that there are two particles to annihilate in |j>
 		 jstate[a3]==1 && jstate[c1]==0  &&      # and space for two to create in <i|
@@ -313,8 +314,8 @@ over precomputed `states`.
 function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 						Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2}, 
 						mu::Float64,
-						states::Array{Array{Int64,1},1},
-						pNumerics::NumericalParameters)::SparseMatrixCSC{Complex{Float64},Int64}
+						states::Array{Fockstate,1},
+						pNumerics::NumericalParameters)::Hamiltonian
 
 	# Set up index array for the sparse Hamiltonian Matrix
 	HamiltonianElementsI = Int64[]
@@ -365,17 +366,17 @@ end
 
 Diagonalize a given `Hamiltonian`. Eigenvalues will be cast to real, since the Hamiltonian is hermitian.
 """
-function getEvalEvecs(Hamiltonian::SparseMatrixCSC{Complex{Float64},Int64},
-                      nevalsPerSubspace::Int64 )
-	dim = size(Hamiltonian)[1]
+function getEvalEvecs(hamiltonian::Hamiltonian,
+                      nevalsPerSubspace::UInt64 )::Tuple{Array{Eigenvalue,1}, EigenvectorMatrix }
+	dim = size(hamiltonian)[1]
 
 	if  dim<10 || nevalsPerSubspace>0.7*dim    # Full diagonalization if matrix is small 
-		HamDense = Matrix(Hamiltonian)
+		HamDense = Matrix(hamiltonian)
 		evals = eigvals(HamDense)
 		evecs = eigvecs(HamDense)
 		return real(evals), evecs
 	else                              # Otherwise use Arpack
-		evals,evecs = eigs(Hamiltonian,nev=nevalsPerSubspace,which=:SR)
+		evals,evecs = eigs(hamiltonian,nev=nevalsPerSubspace,which=:SR)
 		return real(evals), evecs
 	end
 end
@@ -388,23 +389,27 @@ Create the N,S submatrices of the Hamiltonian, solve it and return the Eigenvalu
 function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 						Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
 						mu::Float64,
-					 	allstates::Array{Array{Array{Array{Int64,1},1},1},1},
+					 	allstates::NSstates,
 						pNumerics::NumericalParameters)
-	evallist::Array{Array{Float64,1},1}          = [] # this list stores the lowest of the smallest eigenvalues and N, S quantum numbers
-	eveclist::Array{Array{Complex{Float64},1},1} = [] # this list stores the lowest of the smallest eigenvectors
+	evallist::Array{Array{Eigenvalue,1},1}          = [] # this list stores the lowest of the smallest eigenvalues and N, S quantum numbers
+	eveclist::Array{Eigenvector,1} = [] # this list stores the lowest of the smallest eigenvectors
 
-	Nmax = size(allstates)[1]-1
+	Nmax = UInt32(size(allstates)[1]-1)
 	for n=0:Nmax
 		for s=1:noSpinConfig(n,Nmax)
 			dim = length(allstates[n+1][s])
 			print("Constructing Hamiltonian(",dim,"x",dim,"), N=",n,", S=",spinConfig(s,n,Nmax),"... ")
 
 			# now get the Hamiltonian submatrix spanned by all states <i| |j> in the N,S space (sparse matrix)
-			Hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,allstates[n+1][s],pNumerics)
+			hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,allstates[n+1][s],pNumerics)
 			println("Done!")
+
+			#if (n==6 && spinConfig(s,n,Nmax)==0)
+			#	writeMatrixGnuplot("hamil.dat",Matrix(hamiltonian))
+			#end
 	
 			print("Diagonalizing Hamiltonian... ")
-			evals,evecs = getEvalEvecs(Hamiltonian, pNumerics.nevalsPerSubspace)
+			evals,evecs = getEvalEvecs(hamiltonian, pNumerics.nevalsPerSubspace)
 			
 			# save the pairs of eigvals and eigvecs, also the N,S quantum numbers
 			for i=1:min(pNumerics.nevalsPerSubspace,length(evals))
@@ -452,7 +457,7 @@ end
 
 Calculate partition function from the eigenvalues in `evallist`.
 """
-function getZ(evallist::Array{Array{Float64,1},1}, beta::Float64)
+function getZ(evallist::Array{Array{Eigenvalue,1},1}, beta::Float64)
 	evals = first.(evallist)
 	E0 = minimum(evals)
 	return sum( exp.(-beta.*( evals .-E0)) )  # subtract E0 to avoid overflow

@@ -1,11 +1,35 @@
 
 """
+    writeMatrixGnuplot(filename, matrix)
+
+Writes a Matrix `matrix(norb1,norb2)` in human readable (fixed column width format) form into a file.
+Only writes the real part and writes a linebreak after each row so that Gnuplot sp w pm3d works
+.
+"""
+function writeMatrixGnuplot(filename::String,matrix)
+	
+	norb1=size(matrix,1)
+	norb2=size(matrix,2)
+
+	open(filename, "w") do outf
+		for m1=1:norb1
+			for m2=1:norb2
+				re = real(matrix[m1,m2])
+#				im = imag(matrix[m1,m2])
+				@printf(outf, "%i %i %.7E \n", m1,m2,re)
+			end # m2
+		write(outf, "\n" )
+		end # m1
+	end # close
+end
+
+"""
     writeGF(filename, G, w)
 
 Writes a Green's function `G(norb,norb,nw)` in human readable (fixed column width format) form into a file.
 `mgrid` is the associated Matsuabra grid (as indices or evaluated).
 """
-function writeGF(filename::String,G::Array{Complex{Float64},3},mgrid)
+function writeGF(filename::String,G::SingleParticleFunction,mgrid)
     @assert length(mgrid) <= size(G,3)
 	
 	norb=size(G,1)
@@ -31,7 +55,7 @@ end
 
 Print all states and N S quantum numbers
 """
-function printStateInfo(allstates::Array{Array{Array{Array{Int64,1},1},1},1})
+function printStateInfo(allstates::NSstates)
 	println("We have the following states:")
 	Nmax = length(allstates)
 	for n=0:Nmax
@@ -49,10 +73,10 @@ end
 
 Print the Eigenvalues and some info
 """
-function printEvalInfo(evallist::Array{Array{Float64,1},1},
-                       eveclist::Array{Array{Complex{Float64},1},1},
-					   allstates::Array{Array{Array{Array{Int64,1},1},1},1}) #TODO: omg
-	Nmax = length(allstates)
+function printEvalInfo(evallist::Array{Array{Eigenvalue,1},1},
+                       eveclist::Array{Eigenvector,1},
+   					     allstates::NSstates)
+	Nmax = UInt32(length(allstates))
 	E0 = minimum(first.(evallist))
 	perm = sortperm(first.(evallist))
 
@@ -62,7 +86,7 @@ function printEvalInfo(evallist::Array{Array{Float64,1},1},
 	for i=vcat(1:printlimit, length(evallist)-printlimit:length(evallist))
 		E = evallist[perm][i][1] -E0
 		N = round(Int64,evallist[perm][i][2])
-		s = round(Int64,evallist[perm][i][3])
+		s = round(UInt64,evallist[perm][i][3])
 		S = spinConfig(s,N,Nmax)
 		evstate = eveclist[perm][i]
 		permV = sortperm( evstate, by=abs, rev=true )
@@ -141,7 +165,7 @@ end
 
 Print the calculated normalization of the diagonal Green's function elements
 """
-function printGFnorm(gfdiagnorm::Array{Float64,1}, highestEval::Float64)
+function printGFnorm(gfdiagnorm::Array{Float64,1}, highestEval::Eigenvalue)
 	println("Obtained the following normalization of the Green's function for all orbitals:")
 	for n in gfdiagnorm
 		@printf( "%5.3f ", n ) 

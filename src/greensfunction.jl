@@ -7,10 +7,10 @@ hoppings between sites `i` and `j`, `tmatrix` and Matsubara grid `w`.
 function getG0(        eps::Array{Float64,1},
                    tmatrix::Array{Float64,2},  
 					pSimulation::SimulationParameters,
-					          w::Array{ComplexF64,1} )
+					          w::FrequencyMeshCplx )::SingleParticleFunction
 	norb=size(tmatrix)[1]
 	nw = length(w)
-	gf0 = zeros(ComplexF64,norb,norb,nw)
+	gf0::SingleParticleFunction = zeros(norb,norb,nw)
 	for n=1:nw
 		gf0[:,:,n] = inv( I*(w[n] + pSimulation.mu) - Diagonal(eps[1:2:end]) - tmatrix ) # eps is defined for spins, so only take orbital part
 	end
@@ -30,8 +30,8 @@ now just determine the transformation when acting the annihilation operator `ann
 `anni` is the orbital/spin index
 """
 function getCmatrix(     anni::Int64, 
-                    subspace2::Array{Array{Int64,1},1}, 
-						  subspace1::Array{Array{Int64,1},1})::SparseMatrixCSC{Int64,Int64}
+                    subspace2::Array{Fockstate,1}, 
+						  subspace1::Array{Fockstate,1})::CAmatrix
 	dim1 = length(subspace1)
 	dim2 = length(subspace2)
 	indexI = Int64[]
@@ -66,8 +66,8 @@ now just determine the transformation when acting the creation operator `crea` o
 `crea` is the orbital/spin index
 """
 function getCdagmatrix(     crea::Int64, 
-                       subspace1::Array{Array{Int64,1},1}, 
-							  subspace2::Array{Array{Int64,1},1})::SparseMatrixCSC{Int64,Int64}
+                       subspace1::Array{Fockstate,1}, 
+							  subspace2::Array{Fockstate,1})::CAmatrix
 	dim1 = length(subspace1)
 	dim2 = length(subspace2)
 	indexI = Int64[]
@@ -99,25 +99,26 @@ Evaluation of the Lehmann representation for the interacting finite-temperature 
 We sum over all Eigenstates `evallist` with electron number N and all other eigenstates n2 with electron number N-1
 Since we have spin degeneracy, we only calculate the up GF, so we annihilate one up spin, so we also only sum over all S-1 states for given S(n1)
 """
-function getGF( evallist::Array{Array{Float64,1},1},
-                eveclist::Array{Array{Complex{Float64},1},1},
-					allstates::Array{Array{Array{Array{Int64,1},1},1},1},
+function getGF( evallist::Array{Array{Eigenvalue,1},1},
+                eveclist::Array{Eigenvector,1},
+					allstates::NSstates,
 					pModel::ModelParameters,
 					pSimulation::SimulationParameters,
 					pFreq::FrequencyMeshes,
-					pNumerics::NumericalParameters)
+					pNumerics::NumericalParameters)::Tuple{SingleParticleFunction,SingleParticleFunction,Array{Array{Float64,1},1}}
 
 	norb=pModel.norb
-	Nmax=pModel.Nmax
+	Nmax=UInt32(pModel.Nmax)
 	beta = pSimulation.beta
 
 	NSvalues   = Int64[-1,-1,-1,-1]
-	cmatrix    = SparseMatrixCSC{Int64,Int64}[]
-	cdagmatrix = SparseMatrixCSC{Int64,Int64}[]
-	gf_w       = zeros(ComplexF64,norb,norb,length(pFreq.wf))
-	gf_iw      = zeros(ComplexF64,norb,norb,length(pFreq.iwf))
+	cmatrix    = CAmatrix[]
+	cdagmatrix = CAmatrix[]
+	gfdiagnorm                    = zeros(Float64,norb)                   # check normalization of GF
+	gf_w::SingleParticleFunction  = zeros(norb,norb,length(pFreq.wf))
+	gf_iw::SingleParticleFunction = zeros(norb,norb,length(pFreq.iwf))
+
 	evalContributions::Array{Array{Float64,1},1} = []
-	gfdiagnorm = zeros(Float64,norb)                            # check normalization of GF
 
 	# First create a sortting for all Eigenstates in order of increasing N,S, which makes the GF generation more efficient
 	NSperm = getNSperm(evallist)
@@ -131,7 +132,7 @@ function getGF( evallist::Array{Array{Float64,1},1},
 
 		E1    = evallist[NSperm[n1]][1] -E0     # shift by E0 to avoid overflow
 		N1    = round(Int64,evallist[NSperm[n1]][2])
-		s1    = round(Int64,evallist[NSperm[n1]][3])
+		s1    = round(UInt64,evallist[NSperm[n1]][3])
 		evec1 = eveclist[NSperm[n1]]
 		S1    = spinConfig(s1,N1,Nmax)
 		push!( evalContributions, [N1,S1,E1,0.0] )
@@ -139,7 +140,7 @@ function getGF( evallist::Array{Array{Float64,1},1},
 		for n2=1:length(evallist)
 			E2    = evallist[NSperm[n2]][1] -E0
 			N2    = round(Int64,evallist[NSperm[n2]][2])   
-			s2    = round(Int64,evallist[NSperm[n2]][3])
+			s2    = round(UInt64,evallist[NSperm[n2]][3])
 			evec2 = eveclist[NSperm[n2]]
 			S2    = spinConfig(s2,N2,Nmax)
 
@@ -155,8 +156,8 @@ function getGF( evallist::Array{Array{Float64,1},1},
 					# we need to generate cmatrix and cdagmatrix for all orbitals
 					dim1 = length(allstates[N1+1][s1])
 					dim2 = length(allstates[N2+1][s2])
-					cmatrix    = SparseMatrixCSC{Int64,Int64}[]   # go from subspace 1 to 2 by annihilation
-					cdagmatrix = SparseMatrixCSC{Int64,Int64}[]   # go from subspace 2 to 1 by creation
+					cmatrix    = CAmatrix[]   # go from subspace 1 to 2 by annihilation
+					cdagmatrix = CAmatrix[]   # go from subspace 2 to 1 by creation
 					for m1=1:norb
 						c1 = 2*m1-1
 						a1 = 2*m1-1
@@ -225,8 +226,8 @@ end
 
 Calculate the Selfenergy from `G0` and `G`
 """
-function getSigma(G0::Array{Complex{Float64},3}, G::Array{Complex{Float64},3})
-	sigma = zeros(ComplexF64,size(G))
+function getSigma(G0::SingleParticleFunction, G::SingleParticleFunction)
+	sigma::SingleParticleFunction = zeros(size(G))
 	for i=1:size(G)[3]
 		sigma[:,:,i]  = inv( G0[:,:,i]) - inv( G[:,:,i])
 	end
