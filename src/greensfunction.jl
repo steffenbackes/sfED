@@ -8,11 +8,11 @@ function getG0(        eps::Array{Float64,1},
                    tmatrix::Array{Float64,2},  
 					pSimulation::SimulationParameters,
 					          w::FrequencyMeshCplx )::SingleParticleFunction
-	norb=size(tmatrix)[1]
+	norb=length(pSimulation.gf_orbs)
 	nw = length(w)
 	gf0::SingleParticleFunction = zeros(norb,norb,nw)
 	for n=1:nw
-		gf0[:,:,n] = inv( I*(w[n] + pSimulation.mu) - Diagonal(eps[1:2:end]) - tmatrix ) # eps is defined for spins, so only take orbital part
+		gf0[:,:,n] = inv( I*(w[n] + pSimulation.mu) - Diagonal(eps[1:2:end][pSimulation.gf_orbs]) - tmatrix[pSimulation.gf_orbs,pSimulation.gf_orbs] ) # eps is defined for spins, so only take orbital part
 	end
 	return gf0
 end
@@ -107,7 +107,7 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
 					pFreq::FrequencyMeshes,
 					pNumerics::NumericalParameters)::Tuple{SingleParticleFunction,SingleParticleFunction,Array{Array{Float64,1},1}}
 
-	norb=pModel.norb
+	norb=length(pSimulation.gf_orbs)
 	Nmax=UInt32(pModel.Nmax)
 	beta = pSimulation.beta
 
@@ -159,8 +159,8 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
 					cmatrix    = CAmatrix[]   # go from subspace 1 to 2 by annihilation
 					cdagmatrix = CAmatrix[]   # go from subspace 2 to 1 by creation
 					for m1=1:norb
-						c1 = 2*m1-1
-						a1 = 2*m1-1
+						c1 = 2*pSimulation.gf_orbs[m1]-1
+						a1 = 2*pSimulation.gf_orbs[m1]-1
 						push!( cmatrix,       getCmatrix(a1, allstates[N2+1][s2], allstates[N1+1][s1]) )
 						push!( cdagmatrix, getCdagmatrix(c1, allstates[N1+1][s1], allstates[N2+1][s2]) )
 					end # m1 loop

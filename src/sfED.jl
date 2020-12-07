@@ -1,4 +1,4 @@
-module sfED
+#module sfED
 using Arpack
 using LinearAlgebra
 using SparseArrays
@@ -12,15 +12,18 @@ include("IO.jl")
 include("greensfunction.jl")
 
 function example_run()
+	norb = 6
 	U = 3.0
 	J = 0.3
 	Up = U-2*J
 	t = 1.0
 	mu = (U+Up+Up-J)/2      # half filling
 	beta = 40.0
+	gf_orbs = [i for i=1:norb]
+	#gf_orbs = [1,2]
 
-	pModel = ModelParameters(norb=4)
-	pSimulation = SimulationParameters(U=U,J=J,t=t,mu=mu, beta=beta)
+	pModel = ModelParameters(norb=norb)
+	pSimulation = SimulationParameters(U=U,J=J,t=t,mu=mu, beta=beta, gf_orbs=gf_orbs)
 	pFreq = FrequencyMeshes(nw=501,
 	                        wmin=-8.0, wmax=8.0,
 					 			   iwmax=80.0,
@@ -66,4 +69,5 @@ function example_run()
 	writeEvalContributionsSectors("evalContributionsSectors.dat", evalContributions)
 	writeEvalContributions("evalContributions.dat", evalContributions)
 	end # end example function
-end
+#end
+example_run()

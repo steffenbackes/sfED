@@ -24,15 +24,16 @@ struct ModelParameters
 end
 
 struct SimulationParameters
-	U     ::Float64        # local Hubbard interaction
-	J     ::Float64        # local Hund's coupling
-	Up    ::Float64        # interorbital Hubbard interaction=U-2*J
-	t     ::Float64        # hopping parameter (positive)
-	mu    ::Float64        # chemical potential
-	beta  ::Float64        # inverse temperature
+	U      ::Float64        # local Hubbard interaction
+	J      ::Float64        # local Hund's coupling
+	Up     ::Float64        # interorbital Hubbard interaction=U-2*J
+	t      ::Float64        # hopping parameter (positive)
+	mu     ::Float64        # chemical potential
+	beta   ::Float64        # inverse temperature
+	gf_orbs::Array{Int64,1} # orbitals for which the Green's function is calculated (full matrix norb x norb)
 	
 	# Constructor
-	SimulationParameters(;U,J,t,mu,beta) = new(U,J,U-2*J,t,mu,beta)
+	SimulationParameters(;U,J,t,mu,beta,gf_orbs) = new(U,J,U-2*J,t,mu,beta,gf_orbs)
 end
 
 struct NumericalParameters
