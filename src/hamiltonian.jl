@@ -239,32 +239,15 @@ function getMatrixElem1Particle(c1::Int64,
 							    jstate::Fockstate)
 	tmp = 0.0
    # check that there is a particle to annihilate and an empty state to create when going j->i,
-	# and that the reverse holds for the <i| state
-	if ( jstate[a1]==1 && jstate[c1]==0 &&
-        istate[a1]==0 && istate[c1]==1  )
+   # and that the reverse holds for the <i| state
+   # then we can compare the states by counting the difference between them, it has to be exactly
+   # 2, since they differ only in a1 and c1 position. Then |i> will be <j| after applying c^dagger c
+	if ( jstate[a1] * (1-jstate[c1]) * (1-istate[a1]) * istate[c1] ==1 && sum(istate .!= jstate)==2 )
 
-		state = copy(jstate)
-		state[a1] = 0                   # First destroy particle
-		a1sgn = (-1)^sum(state[1:a1])   # Then we can safely count the #particles before the particle in the state
-		c1sgn = (-1)^sum(state[1:c1])   # We can safely count the #particles before creating since state[c1]==0 
-		state[c1] = 1                   # Now create particle
-
-		if state==istate
-			tmp = a1sgn*c1sgn
-		end
+		a1sgn = (-1)^sum(jstate[1:a1-1])  # We need to subtract 1 because there is a particle at a1 in |i>
+		c1sgn = (-1)^sum(istate[1:c1-1])    # We need to subtract 1 because there is a particle at c1 in <j|
+		tmp = a1sgn*c1sgn
 	end # if
-
-#ALTERNATE VERSION which is only marginally faster, but harder to read
-	  # check that there is a particle to annihilate and an empty state to create when going j->i,
-	  # and that the reverse holds for the <i| state
-	  # then we can compare the states by counting the difference between them, it has to be exactly
-	  # 2, since they differ only in a1 and c1 position
-#	if (jstate[a1]==1 && jstate[c1]==0 && istate[a1]==0 && istate[c1]==1 && sum(istate .!= jstate)==2 )
-#
-#		a1sgn = (-1)^(sum(jstate[1:a1])-1)  # We need to subtract 1 because there is a particle at a1 in |i>
-#		c1sgn = (-1)^(sum(istate[1:c1])-1)    # We need to subtract 1 because there is a particle at c1 in <j|
-#		tmp = a1sgn*c1sgn
-#	end # if
 
 	return tmp
 end

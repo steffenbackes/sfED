@@ -19,8 +19,8 @@ function example_run()
 	t = 1.0
 	mu = (U+Up+Up-J)/2      # half filling
 	beta = 40.0
-	gf_orbs = [i for i=1:norb]
-	#gf_orbs = [1,2]
+	#gf_orbs = [i for i=1:norb]
+	gf_orbs = [1]
 
 	pModel = ModelParameters(norb=norb)
 	pSimulation = SimulationParameters(U=U,J=J,t=t,mu=mu, beta=beta, gf_orbs=gf_orbs)

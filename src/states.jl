@@ -28,6 +28,15 @@ indexSpinConfig(S::Int,n::Int,Nmax::UInt32)::UInt64 = round(UInt64,  (S + (Nmax/
 total spin `S` of `state`.
 """
 getSpin(state::Fockstate) = sum((2*(i%2)-1)*state[i] for i in 1:length(state))
+
+
+"""
+    getCsign(i,state)
+
+return the sign when creating/annihilating an electron at position i in state.
+"""
+getCsign(i::Int64,state::Fockstate) = (-1)^sum(state[1:i-1])
+
 ########################################################################
 
 ########################################################################

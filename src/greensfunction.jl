@@ -172,25 +172,30 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
 					# first the diagonal elements
 					evec1cdagevec2 = dot( evec1, cdagmatrix[m1]*evec2 )  # we can reuse this result
 
-					overlap =  evec1cdagevec2 * dot( evec2, cmatrix[m1]*evec1 ) * expFac # include the Boltzmann terms
-					if abs(overlap)>pNumerics.cutoff
-						gf_w[m1,m1,:]  += overlap ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
-						gf_iw[m1,m1,:] += overlap ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
-						evalContributions[n1][4] += abs(overlap)
-						evalContributions[n2][4] += abs(overlap)
-						gfdiagnorm[m1] += real(overlap)
-					end
+					# if this overlap is too small, it doesn't matter what the other is since they get multiplied
+					if abs(evec1cdagevec2)>pNumerics.cutoff
 	
-					# then upper offdiagonal
-					for m2=m1+1:norb
-						overlap =  evec1cdagevec2 * dot( evec2, cmatrix[m2]*evec1 ) * expFac # include the Boltzmann terms
+						overlap =  evec1cdagevec2 * dot( evec2, cmatrix[m1]*evec1 ) * expFac # include the Boltzmann terms
 						if abs(overlap)>pNumerics.cutoff
-							gf_w[m1,m2,:]  += overlap ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
-							gf_iw[m1,m2,:] += overlap ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
+							gf_w[m1,m1,:]  += overlap ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
+							gf_iw[m1,m1,:] += overlap ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
 							evalContributions[n1][4] += abs(overlap)
 							evalContributions[n2][4] += abs(overlap)
+							gfdiagnorm[m1] += real(overlap)
 						end
-					end # m2 loop
+		
+						# then upper offdiagonal
+						for m2=m1+1:norb
+							overlap =  evec1cdagevec2 * dot( evec2, cmatrix[m2]*evec1 ) * expFac # include the Boltzmann terms
+							if abs(overlap)>pNumerics.cutoff
+								gf_w[m1,m2,:]  += overlap ./ ( pFreq.wf     .+ (pNumerics.delta*im - E1 + E2) )
+								gf_iw[m1,m2,:] += overlap ./ ( im*pFreq.iwf .+ (                   - E1 + E2) )
+								evalContributions[n1][4] += abs(overlap)
+								evalContributions[n2][4] += abs(overlap)
+							end
+						end # m2 loop
+
+					end # if evec1cdagevec2>pNumerics.cutoff
 				end # m1 loop
 	
 			end # if exp(-beta*E) > cutoff
