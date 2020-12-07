@@ -1,4 +1,4 @@
-#module sfED
+module sfED
 using Arpack
 using LinearAlgebra
 using SparseArrays
@@ -69,5 +69,5 @@ function example_run()
 	writeEvalContributionsSectors("evalContributionsSectors.dat", evalContributions)
 	writeEvalContributions("evalContributions.dat", evalContributions)
 	end # end example function
-#end
-example_run()
+end
+#example_run()
