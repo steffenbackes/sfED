@@ -1,0 +1,518 @@
+\documentclass[12pt,a4paper]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{braket}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[top=3cm, left=3cm, right=3cm, bottom=3cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage[absolute]{textpos}
+\numberwithin{equation}{section}
+\usepackage[colorlinks=True, urlcolor=blue]{hyperref}
+\pagestyle{fancy}
+\fancyhead[C]{}
+\fancyhead[L]{}
+\fancyfoot[C]{\thepage}
+\fancyhead[R]{}
+
+
+\renewcommand{\exp}[1]{\mathrm{e}^{#1}}
+
+\title{Lehmann representation of the one- and two-particle Green's function}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+
+\section{Lehmann representation of the Green's function}
+\subsection{One-particle Green's function}
+On the real axis we want to obtain the retarded Green's function
+\begin{align}
+ G^R_{ab}(t,t') &= -i\theta(t-t') \braket{\{ c_a(t) c^{\dagger}_b(t') \} } \\
+  &= -i\theta(t-t') \Big(
+   \braket{c_a(t) c^{\dagger}_b(t') } - \braket{c^{\dagger}_b(t') c_a(t)  }.
+   \Big)
+\end{align}
+To obtain the Lehman representation we evaluate the first term and evaluate
+the expectation value using the Eigenbasis $\ket{n}$ of the Hamiltonian $H$
+\begin{align}
+ G^>_{ab}(t,t') 
+  &= -i \braket{c_a(t) c^{\dagger}_b(t') } \\
+  &= \frac{-i}{Z} \sum_n \exp{-\beta E_n} \bra{n} \exp{iHt} c_a \exp{-iHt} \exp{iHt'}c^{\dagger}_b\exp{-iHt'}  \ket{n} \\
+  &= \frac{-i}{Z} \sum_{n,m} \exp{-\beta E_n} \bra{n} \exp{iHt} c_a \exp{-iHt} \ket{m}\bra{m} \exp{iHt'}c^{\dagger}_b\exp{-iHt'}  \ket{n} \\
+  &= \frac{-i}{Z} \sum_{n,m} \exp{-\beta E_n}\exp{i(E_n-E_m)(t-t')} \bra{n} c_a \ket{m}\bra{m} c^{\dagger}_b \ket{n}.
+  \end{align}
+In the same way we get for the second term
+\begin{align}
+ G^<_{ab}(t,t') 
+  &= i \braket{c^{\dagger}_b(t') c_a(t)  } \\
+  &= \frac{-i}{Z} \sum_{n,m} \exp{-\beta E_n}\exp{i(E_n-E_m)(t'-t)} \bra{n} c^{\dagger}_b \ket{m}\bra{m} c_a \ket{n} \\
+  &\stackrel{n\leftrightarrow m}{=} \frac{-i}{Z} \sum_{n,m} \exp{-\beta E_m}\exp{i(E_n-E_m)(t-t')} \bra{n} c_a \ket{m}\bra{m} c^{\dagger}_b \ket{n}.
+\end{align}
+The full retarded Green's function is then given by
+\begin{align}
+ G^R_{ab}(t-t') 
+&=  \theta(t-t') \frac{-i}{Z} \sum_{n,m} \left( \exp{-\beta E_n} + \exp{-\beta E_m} \right) \exp{i(E_n-E_m)(t-t')} \bra{n} c_a \ket{m}\bra{m} c^{\dagger}_b \ket{n}.
+ \end{align}
+A Fourier transform to frequency space yields
+\begin{align}
+ G_{ab}(\omega) 
+ &= \int_{-\infty}^{\infty} G^R_{ab}(t) \exp{i(\omega+i\delta)t}  \, \mathrm{d}t \\
+ &= \frac{-i}{Z} \sum_{n,m} \left( \exp{-\beta E_n} + \exp{-\beta E_m} \right) \bra{n} c_a \ket{m}\bra{m} c^{\dagger}_b \ket{n}
+     \int_{0}^{\infty} \exp{i(w+i\delta+E_n-E_m)t}   \, \mathrm{d}t \\
+&= \frac{1}{Z} \sum_{n,m} \left( \exp{-\beta E_n} + \exp{-\beta E_m} \right) 
+  \frac{ \bra{n} c_a \ket{m}\bra{m} c^{\dagger}_b \ket{n} }{w+i\delta+E_n-E_m}.
+\end{align}
+The Matsubara Green's function is obtained by substituting $\omega+i\delta \rightarrow i\omega_n$.
+
+We see that for a given $\ket{n}$ with $N_n$ electrons, the summation over $m$ can be restricted to the 
+subspace with $N_m=N_n+1$ electrons, Or, respectively, 
+for a given $\ket{m}$ with $N_m$ electrons, the summation over $n$ can be restricted to the 
+subspace with $N_n=N_m-1$ electrons.
+
+
+\subsection{Two-particle Green's function}
+We consider the two-particle Green's function $G^{(2)}_{\uparrow \downarrow}$ as defined in the PhD Thesis of G.Rohringer
+\begin{align}
+G^{(2)}_{\uparrow \downarrow}(\tau_1,\tau_2,\tau_3,\tau_4)
+ &= \braket{T c^{\dagger}_{\uparrow}(\tau_1) c_{\uparrow}(\tau_2) c^{\dagger}_{\downarrow}(\tau_3) c_{\downarrow}(\tau_4)  }.
+\end{align}
+The other spin combinations like $\uparrow \uparrow $ can by obtained from $G^{(2)}_{\uparrow \downarrow}$ by using symmetry relations.
+
+Due to time-translational invariance we can set $\tau_4=0$, which leaves us with 
+6 distinct time orderings for $\tau_1,\tau_2,\tau_3$
+\begin{align}
+G^{(2)}_{\uparrow \downarrow}(\tau_1,\tau_2,\tau_3,\tau_4)
+&= \theta_{\tau_1 > \tau_2 > \tau_3}\braket{c^{\dagger}_{\uparrow}(\tau_1) c_{\uparrow}(\tau_2) c^{\dagger}_{\downarrow}(\tau_3) c_{\downarrow}(0)  } \nonumber\\
+&- \theta_{\tau_1 > \tau_3 > \tau_2}\braket{c^{\dagger}_{\uparrow}(\tau_1) c^{\dagger}_{\downarrow}(\tau_3) c_{\uparrow}(\tau_2) c_{\downarrow}(0)  } \nonumber\\
+%
+&\ - \theta_{\tau_2 > \tau_1 > \tau_3}\braket{c_{\uparrow}(\tau_2) c^{\dagger}_{\uparrow}(\tau_1) c^{\dagger}_{\downarrow}(\tau_3) c_{\downarrow}(0)  } \nonumber\\
+&\ + \theta_{\tau_2 > \tau_3 > \tau_1}\braket{c_{\uparrow}(\tau_2) c^{\dagger}_{\downarrow}(\tau_3) c^{\dagger}_{\uparrow}(\tau_1)  c_{\downarrow}(0)  } \nonumber\\
+%
+&+ \theta_{\tau_3 > \tau_1 > \tau_2 }\braket{c^{\dagger}_{\downarrow}(\tau_3) c^{\dagger}_{\uparrow}(\tau_1) c_{\uparrow}(\tau_2) c_{\downarrow}(0)  } \nonumber\\
+&- \theta_{\tau_3 > \tau_2 > \tau_1 }\braket{c^{\dagger}_{\downarrow}(\tau_3) c_{\uparrow}(\tau_2) c^{\dagger}_{\uparrow}(\tau_1)  c_{\downarrow}(0)  } \nonumber\\
+%
+\end{align}
+We now introduce the Eigenbasis $\ket{m},\ket{n},\ket{o},\ket{p}$ 
+\begin{align}
+ \sum_{mnop} \exp{-\beta E_m}\Big(
+ &+\theta_{\tau_1 > \tau_2 > \tau_3}\braket{m|c^{\dagger}_{\uparrow}(\tau_1) |n}\braket{n| c_{\uparrow}(\tau_2)|o}\braket{o| c^{\dagger}_{\downarrow}(\tau_3) |p}\braket{p| c_{\downarrow}(0) |m} \nonumber\\
+&- \theta_{\tau_1 > \tau_3 > \tau_2}\braket{m|c^{\dagger}_{\uparrow}(\tau_1)|n}\braket{n| c^{\dagger}_{\downarrow}(\tau_3) |o}\braket{o|c_{\uparrow}(\tau_2) |p}\braket{p|c_{\downarrow}(0) |m} \nonumber\\
+%
+&- \theta_{\tau_2 > \tau_1 > \tau_3}\braket{m|c_{\uparrow}(\tau_2)|n}\braket{n| c^{\dagger}_{\uparrow}(\tau_1) |o}\braket{o|c^{\dagger}_{\downarrow}(\tau_3) |p}\braket{p|c_{\downarrow}(0) |m} \nonumber\\
+&+ \theta_{\tau_2 > \tau_3 > \tau_1}\braket{m|c_{\uparrow}(\tau_2) |n}\braket{n|c^{\dagger}_{\downarrow}(\tau_3) |o}\braket{o|c^{\dagger}_{\uparrow}(\tau_1) |p}\braket{p| c_{\downarrow}(0) |m} \nonumber\\
+%
+&+ \theta_{\tau_3 > \tau_1 > \tau_2 }\braket{m|c^{\dagger}_{\downarrow}(\tau_3) |n}\braket{n|c^{\dagger}_{\uparrow}(\tau_1) |o}\braket{o|c_{\uparrow}(\tau_2) |p}\braket{p|c_{\downarrow}(0) |m} \nonumber\\
+&- \theta_{\tau_3 > \tau_2 > \tau_1 }\braket{m|c^{\dagger}_{\downarrow}(\tau_3) |n}\braket{n|c_{\uparrow}(\tau_2) |o}\braket{o|c^{\dagger}_{\uparrow}(\tau_1) |p}\braket{p| c_{\downarrow}(0) |m} \Big) \\
+%
+%
+%
+ =\sum_{mnop} \exp{-\beta E_m}\Big(
+&+ \theta_{\tau_1 > \tau_2 > \tau_3} \exp{\tau_1(E_m-E_n)}\exp{\tau_2(E_n-E_o)}\exp{\tau_3(E_o-E_p)} \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o}\braket{o| c^{\dagger}_{\downarrow} |p}\braket{p| c_{\downarrow} |m} \nonumber\\
+&- \theta_{\tau_1 > \tau_3 > \tau_2} \exp{\tau_1(E_m-E_n)}\exp{\tau_3(E_n-E_o)}\exp{\tau_2(E_o-E_p)} \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} \nonumber\\
+%
+&- \theta_{\tau_2 > \tau_1 > \tau_3} \exp{\tau_2(E_m-E_n)}\exp{\tau_1(E_n-E_o)}\exp{\tau_3(E_o-E_p)} \braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o}\braket{o|c^{\dagger}_{\downarrow} |p}\braket{p|c_{\downarrow} |m} \nonumber\\
+&+ \theta_{\tau_2 > \tau_3 > \tau_1} \exp{\tau_2(E_m-E_n)}\exp{\tau_3(E_n-E_o)}\exp{\tau_1(E_o-E_p)} \braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow} |o}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m} \nonumber\\
+%
+&+ \theta_{\tau_3 > \tau_1 > \tau_2} \exp{\tau_3(E_m-E_n)}\exp{\tau_1(E_n-E_o)}\exp{\tau_2(E_o-E_p)} \braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} \nonumber\\
+&- \theta_{\tau_3 > \tau_2 > \tau_1} \exp{\tau_3(E_m-E_n)}\exp{\tau_2(E_n-E_o)}\exp{\tau_1(E_o-E_p)} \braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m} \Big).
+\end{align}
+%
+%
+%%
+%%
+%%
+%%
+We now perform a Fourier transform $\tau_i \rightarrow i\omega_i$. The \textbf{\underline{first}} term evaluates to
+\begin{align}
+ &\int_0^{\beta} \mathrm{d}\tau_3 \exp{i\omega_3 \tau_3} 
+ \int_0^{\beta} \mathrm{d}\tau_2 \exp{i\omega_2 \tau_2}
+ \int_0^{\beta} \mathrm{d}\tau_1 \exp{i\omega_1 \tau_1}
+ \Big( \exp{-\beta E_m}\theta_{\tau_1 > \tau_2 > \tau_3} \exp{\tau_1(E_m-E_n)}\exp{\tau_2(E_n-E_o)}\exp{\tau_3(E_o-E_p)} \Big) \\
+ %
+ &= \exp{-\beta E_m}
+ \int_0^{\beta} \mathrm{d}\tau_3 \exp{\tau_3( i\omega_3 +E_o-E_p) } 
+ \int_{\tau_3}^{\beta} \mathrm{d}\tau_2 \exp{\tau_2( i\omega_2 + E_n-E_o) }
+ \int_{\tau_2}^{\beta} \mathrm{d}\tau_1 \exp{\tau_1( i\omega_1 + E_m-E_n) } \\
+% 
+ &= \exp{-\beta E_m}
+ \int_0^{\beta} \mathrm{d}\tau_3 \exp{\tau_3( i\omega_3 +E_o-E_p) } 
+ \int_{\tau_3}^{\beta} \mathrm{d}\tau_2 \exp{\tau_2( i\omega_2 + E_n-E_o) }
+ \frac{-\exp{\beta(E_m-E_n)} - \exp{\tau_2( i\omega_1 + E_m-E_n) }}{i\omega_1 +E_m-E_n} \\
+ %
+ &= 
+ \frac{-1}{i\omega_1 +E_m-E_n}
+ \int_0^{\beta} \mathrm{d}\tau_3 \exp{\tau_3( i\omega_3 +E_o-E_p) } 
+ \int_{\tau_3}^{\beta} \mathrm{d}\tau_2 \exp{\tau_2( i\omega_2 + E_n-E_o) }
+ \Big( \exp{-\beta E_n} + \exp{\tau_2( i\omega_1 + E_m-E_n) }\exp{-\beta E_m} \Big) \\
+ %
+ &= 
+ \frac{-1}{i\omega_1 +E_m-E_n}
+ \int_0^{\beta} \mathrm{d}\tau_3 \exp{\tau_3( i\omega_3 +E_o-E_p) } 
+ \Big(
+ \exp{-\beta E_n} \frac{-\exp{\beta(E_n-E_o)} - \exp{\tau_3( i\omega_2 + E_n-E_o) }}{i\omega_2 +E_n-E_o} \nonumber \\
+ & \hspace*{6cm} + \exp{-\beta E_m} \frac{+\exp{\beta(E_m-E_o)} - \exp{\tau_3(i\omega_1+ i\omega_2 + E_m-E_o) }}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big)  \\
+ %
+ &= 
+ \frac{1}{i\omega_1 +E_m-E_n}
+ \int_0^{\beta} \mathrm{d}\tau_3 \exp{\tau_3( i\omega_3 +E_o-E_p) } 
+ \Big(
+ \frac{\exp{-\beta E_o} + \exp{-\beta E_n}\exp{\tau_3( i\omega_2 + E_n-E_o) }}{i\omega_2 +E_n-E_o} \nonumber \\
+ & \hspace*{6cm} -  \frac{\exp{-\beta E_o} - \exp{-\beta E_m}\exp{\tau_3(i\omega_1+ i\omega_2 + E_m-E_o) }}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big)  \\
+ %
+ &= 
+ \frac{1}{i\omega_1 +E_m-E_n}
+ \Big( \frac{\int_0^{\beta} \mathrm{d}\tau_3 \exp{\tau_3( i\omega_3 +E_o-E_p) } }{i\omega_2 +E_n-E_o}
+ \Big[
+ \exp{-\beta E_o} + \exp{-\beta E_n}\exp{\tau_3( i\omega_2 + E_n-E_o) } 
+ \Big] \nonumber \\
+ & \hspace*{3cm} -  \frac{\int_0^{\beta} \mathrm{d}\tau_3 \exp{\tau_3( i\omega_3 +E_o-E_p) }}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+ \exp{-\beta E_o} - \exp{-\beta E_m}\exp{\tau_3(i\omega_1+ i\omega_2 + E_m-E_o) }
+ \Big]
+ \Big)  \\
+ %
+  &= 
+ \frac{1}{i\omega_1 +E_m-E_n}
+ \Big( \frac{1}{i\omega_2 +E_n-E_o}
+ \Big[
+ \exp{-\beta E_o}\frac{-\exp{\beta(E_o-E_p)}-1 }{i\omega_3 +E_o-E_p} 
+  + \exp{-\beta E_n}\frac{ +\exp{\beta(E_n- E_p)} -1 }{ i\omega_2 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+ \exp{-\beta E_o} \frac{-\exp{\beta(E_o-E_p)}-1 }{i\omega_3 +E_o-E_p} 
+ - \exp{-\beta E_m} \frac{ -\exp{\beta(E_m- E_p)} -1 }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big)  \\
+ %
+  &= 
+ \frac{1}{i\omega_1 +E_m-E_n}
+ \Big( \frac{1}{i\omega_2 +E_n-E_o}
+ \Big[
+ \frac{-\exp{-\beta E_p}-\exp{-\beta E_o} }{i\omega_3 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_p} -\exp{-\beta E_n}}{ i\omega_2 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{-\exp{-\beta E_p}-\exp{-\beta E_o} }{i\omega_3 +E_o-E_p} 
+ -  \frac{ -\exp{-\beta E_p} -\exp{-\beta E_m} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big)  \\
+ %
+   &= 
+ \frac{-1}{i\omega_1 +E_m-E_n}
+ \Big( \frac{1}{i\omega_2 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_2 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big)  .
+ %
+\end{align}
+The \textbf{\underline{second}} term evaluates to
+\begin{align}
+ &-\int_0^{\beta} \mathrm{d}\tau_2 \exp{i\omega_2 \tau_2} 
+ \int_0^{\beta} \mathrm{d}\tau_3 \exp{i\omega_3 \tau_3}
+ \int_0^{\beta} \mathrm{d}\tau_1 \exp{i\omega_1 \tau_1}
+ \Big( \exp{-\beta E_m}\theta_{\tau_1 > \tau_3 > \tau_2} \exp{\tau_1(E_m-E_n)}\exp{\tau_3(E_n-E_o)}\exp{\tau_2(E_o-E_p)} \Big) \\
+ %
+ &= -\exp{-\beta E_m}
+ \int_0^{\beta} \mathrm{d}\tau_2 \exp{\tau_2( i\omega_2 +E_o-E_p)} 
+ \int_0^{\beta} \mathrm{d}\tau_3 \exp{\tau_3( i\omega_3 +E_n-E_o)}
+ \int_0^{\beta} \mathrm{d}\tau_1 \exp{\tau_1( i\omega_1 +E_m-E_n)},
+\end{align}
+which we see is precisely the same expression as the first term, except we have to swap $i\omega_2 \leftrightarrow i\omega_3$,
+and flip the overall sign.
+Therefore, we get
+\begin{align}
+   & 
+ \frac{1}{i\omega_1 +E_m-E_n}
+ \Big( \frac{1}{i\omega_3 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_2 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big)  .
+ %
+\end{align}
+For the \textbf{\underline{third}} term we have to swap $i\omega_1 \leftrightarrow i\omega_2$ compared to the first term and obtain
+\begin{align}
+    &
+ \frac{1}{i\omega_2 +E_m-E_n}
+ \Big( \frac{1}{i\omega_1 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) .
+\end{align}
+For the \textbf{\underline{fourth}} term we have to swap $i\omega_1 \leftrightarrow i\omega_3$ compared to the third term and obtain
+\begin{align}
+    &
+ \frac{-1}{i\omega_2 +E_m-E_n}
+ \Big( \frac{1}{i\omega_3 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_3+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) .
+\end{align}
+For the \textbf{\underline{fifth}} term we have to swap $i\omega_2 \leftrightarrow i\omega_3$ compared to the third term and obtain
+\begin{align}
+    &
+ \frac{-1}{i\omega_3 +E_m-E_n}
+ \Big( \frac{1}{i\omega_1 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) .
+\end{align}
+For the \textbf{\underline{sixth}} term we have to swap $i\omega_1 \leftrightarrow i\omega_2$ compared to the fifth term and obtain
+\begin{align}
+    &
+ \frac{1}{i\omega_3 +E_m-E_n}
+ \Big( \frac{1}{i\omega_2 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_2+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) .
+\end{align}
+Collecting all terms we obtain the final expression for the two-particle Green's function
+\begin{align}
+& G^{(2)}_{\uparrow \downarrow}(\omega_1,\omega_2,\omega_3)
+=  \sum_{mnop} \Bigg( \nonumber \\
+ % 1st%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    & -
+ \frac{\braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o}\braket{o| c^{\dagger}_{\downarrow} |p}\braket{p| c_{\downarrow} |m}}{i\omega_1 +E_m-E_n}
+ \Big( \frac{1}{i\omega_2 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_2 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big)  (1) \nonumber\\
+ %2nd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    &+ 
+ \frac{\braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m}}{i\omega_1 +E_m-E_n}
+ \Big( \frac{1}{i\omega_3 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_2 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (2) \nonumber  \\
+ %3rd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     &+
+ \frac{\braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o}\braket{o|c^{\dagger}_{\downarrow} |p}\braket{p|c_{\downarrow} |m}}{i\omega_2 +E_m-E_n}
+ \Big( \frac{1}{i\omega_1 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (3) \nonumber\\
+ %4th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     &-
+ \frac{\braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow} |o}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m}}{i\omega_2 +E_m-E_n}
+ \Big( \frac{1}{i\omega_3 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_3+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (4) \nonumber\\
+ %5th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     &-
+ \frac{\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} }{i\omega_3 +E_m-E_n}
+ \Big( \frac{1}{i\omega_1 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (5) \nonumber\\
+ %6th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     &+
+ \frac{\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m}}{i\omega_3 +E_m-E_n}
+ \Big( \frac{1}{i\omega_2 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_2+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (6) \Bigg) \nonumber .
+\end{align}
+When analyzing the overlap elements we see that each term corresponds to the following transitions: Starting with $\ket{m}$
+being a state $m(N,S)$ with electron number $N$ and total spin $S$ we get  by going from right to left
+\begin{align}
+ (1): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N,S)    &\rightarrow n(N-1,S-1)  \rightarrow m(N,S) \nonumber \\
+ (2): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N-2,S)  &\rightarrow n(N-1,S-1)  \rightarrow m(N,S) \nonumber\\
+ (3): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N,S)    &\rightarrow n(N+1,S+1)  \rightarrow m(N,S) \nonumber\\
+ (4): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N,S+2)  &\rightarrow n(N+1,S+1)  \rightarrow m(N,S) \nonumber\\
+ (5): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N-2,S)  &\rightarrow n(N-1,S+1)  \rightarrow m(N,S) \nonumber\\
+ (6): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N,S+2)  &\rightarrow n(N-1,S+1)  \rightarrow m(N,S) 
+\end{align}
+So we rearrange the terms grouping them by similar transitions in order to reuse results as much as possible in the code
+\begin{align}
+ (1): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N,S)    &\rightarrow n(N-1,S-1)  \rightarrow m(N,S) \nonumber \\
+ (3): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N,S)    &\rightarrow n(N+1,S+1)  \rightarrow m(N,S) \nonumber\\
+ (4): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N,S+2)  &\rightarrow n(N+1,S+1)  \rightarrow m(N,S) \nonumber\\
+ (6): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N,S+2)  &\rightarrow n(N-1,S+1)  \rightarrow m(N,S) \nonumber\\
+ (2): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N-2,S)  &\rightarrow n(N-1,S-1)  \rightarrow m(N,S) \nonumber\\
+ (5): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N-2,S)  &\rightarrow n(N-1,S+1)  \rightarrow m(N,S) 
+\end{align}
+which results in the final expression to be evaluated
+\begin{align}
+& G^{(2)}_{\uparrow \downarrow}(\omega_1,\omega_2,\omega_3)
+= \frac{1}{Z} \sum_{mnop} \Bigg( \nonumber \\
+ % 1st%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    & -
+ \frac{\braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o}\braket{o| c^{\dagger}_{\downarrow} |p}\braket{p| c_{\downarrow} |m}}{i\omega_1 +E_m-E_n}
+ \Big( \frac{1}{i\omega_2 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_2 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big)  (1) \nonumber\\
+  %3rd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     &+
+ \frac{\braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o}\braket{o|c^{\dagger}_{\downarrow} |p}\braket{p|c_{\downarrow} |m}}{i\omega_2 +E_m-E_n}
+ \Big( \frac{1}{i\omega_1 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_3 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (3) \nonumber\\
+ %4th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     &-
+ \frac{\braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow} |o}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m}}{i\omega_2 +E_m-E_n}
+ \Big( \frac{1}{i\omega_3 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_3+ i\omega_2 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (4) \nonumber\\
+ %6th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     &+
+ \frac{\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m}}{i\omega_3 +E_m-E_n}
+ \Big( \frac{1}{i\omega_2 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_2+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_1 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (6)  \nonumber\\
+ %2nd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    &+ 
+ \frac{\braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m}}{i\omega_1 +E_m-E_n}
+ \Big( \frac{1}{i\omega_3 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_2 + i\omega_3 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (2) \nonumber  \\
+ %5th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     &-
+ \frac{\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} }{i\omega_3 +E_m-E_n}
+ \Big( \frac{1}{i\omega_1 +E_n-E_o}
+ \Big[
+ \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+  + \frac{ \exp{-\beta E_n} - \exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + E_n- E_p } 
+ \Big] \nonumber \\
+ & \hspace*{2cm} -  \frac{1}{i\omega_1+ i\omega_3 + E_m-E_o}
+ \Big[
+  \frac{\exp{-\beta E_o}+\exp{-\beta E_p} }{i\omega_2 +E_o-E_p} 
+ -  \frac{ \exp{-\beta E_m}+\exp{-\beta E_p} }{ i\omega_1 + i\omega_2 + i\omega_3 + E_m- E_p } 
+ \Big]
+ \Big) (5) \Bigg) \nonumber .
+\end{align}
+%
+%%
+%%
+\end{document}

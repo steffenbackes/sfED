@@ -34,3 +34,9 @@ deps/src/
 .ipynb_checkpoints/
 *bak*
 *dbg*
+
+# latex files
+*.log
+*.synctex.gz
+*.toc
+

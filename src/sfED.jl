@@ -12,7 +12,7 @@ include("IO.jl")
 include("greensfunction.jl")
 
 function example_run()
-	norb = 6
+	norb = 4
 	U = 3.0
 	J = 0.3
 	Up = U-2*J
@@ -29,7 +29,7 @@ function example_run()
 					 			   iwmax=80.0,
 								   beta=pSimulation.beta)
 
-	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=100, nevalsTotalMax=400)
+	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=30, nevalsTotalMax=150)
 
 	println( "We have $(pModel.norb) Orbitals, #$(pModel.Nstates) states and $(pModel.Nmax) max. number of electrons" )
 	
@@ -68,6 +68,11 @@ function example_run()
 	writeGF("sigma_iw.dat",sigma_iw,pFreq.iwf)
 	writeEvalContributionsSectors("evalContributionsSectors.dat", evalContributions)
 	writeEvalContributions("evalContributions.dat", evalContributions)
+
+#	println("Create interacting two-particle Green's function...")
+#	gf2part = getGF2part(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+#	writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
+
 	end # end example function
 end
 #example_run()

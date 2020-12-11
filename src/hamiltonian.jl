@@ -387,8 +387,9 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 			hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,allstates[n+1][s],pNumerics)
 			println("Done!")
 
-			#if (n==6 && spinConfig(s,n,Nmax)==0)
+			#if (n==8 && spinConfig(s,n,Nmax)==0)
 			#	writeMatrixGnuplot("hamil.dat",Matrix(hamiltonian))
+			#	exit()
 			#end
 	
 			print("Diagonalizing Hamiltonian... ")

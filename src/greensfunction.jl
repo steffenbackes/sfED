@@ -81,6 +81,7 @@ function getCdagmatrix(     crea::Int64,
 			c1sgn = (-1)^sum(state[1:crea]) # count the particles before crea
 			state[crea] = 1
 
+			#println("Find ",state," in list of ",subspace1)
 			# now find this state in the N,S subspace
 			i = findfirst(map(x-> all(x .== state), subspace1))
 			push!(indexI,i)
@@ -225,6 +226,354 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
 
 	return gf_w, gf_iw, evalContributions
 end 
+
+#########################################################################################
+
+"""
+    getFuckingLarge2partTerm(w1,w2,w3,Em,En,Eo,Ep,beta)
+Evaluate the Lehmann term for the 2part Green's function
+"""
+function getFuckingLarge2partTerm(w1::FrequencyMesh,w2::Float32,w3::Float32,Em,En,Eo,Ep,beta)::Array{Complex{Float64},1}
+	expEop = exp(-beta*Eo) + exp(-beta*Ep)
+	expEnp = exp(-beta*En) - exp(-beta*Ep)
+	expEmp = exp(-beta*Em) + exp(-beta*Ep)
+
+	return (  ( expEop/(im*w3+Eo-Ep) + expEnp/(im*w2+im*w3+En-Ep) )/(im*w2+En-Eo)  
+	        .-( expEop/(im*w3+Eo-Ep) .- expEmp./(im.*w1.+(im*w2+im*w3+Em-Ep)) )./(im.*w1.+(im*w2+Em-Eo))
+	       )./( im.*w1.+(Em-En) )
+end
+
+###############################################################################################
+"""
+    getGF2part(evallist, eveclist, allstates, pModel, pSimulation, pFreq, pNumerics)
+
+Evaluation of the Lehmann representation for the interacting finite-temperature 2-particle Green's function
+We sum over all Eigenstates `evallist` with electron number N and all other eigenstates connected by c and c^dagger
+We choose the definition G^(2)_up,dn = <T c^dag_up(t1) c_up(t2) c^dag_dn(t3) c_dn(0) >
+"""
+function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
+                eveclist::Array{Eigenvector,1},
+					allstates::NSstates,
+					pModel::ModelParameters,
+					pSimulation::SimulationParameters,
+					pFreq::FrequencyMeshes,
+					pNumerics::NumericalParameters)::TwoParticleFunction
+
+	# we restrict this calculation to one orbital !
+	#norb=1
+	Nmax=UInt32(pModel.Nmax)
+	beta = pSimulation.beta
+	nw = 5
+
+	# arrays to check when we need to recalculate the cdagger cmatrices
+	NSpm   = Int64[-1,-1,-1,-1]
+	NSop13   = Int64[-1,-1,-1,-1]
+	NSop46   = Int64[-1,-1,-1,-1]
+	NSop25   = Int64[-1,-1,-1,-1]
+
+	NSno1   = Int64[-1,-1,-1,-1]
+	NSno3   = Int64[-1,-1,-1,-1]
+	NSno4   = Int64[-1,-1,-1,-1]
+	NSno6   = Int64[-1,-1,-1,-1]
+	NSno2   = Int64[-1,-1,-1,-1]
+	NSno5   = Int64[-1,-1,-1,-1]
+
+	NSmn1   = Int64[-1,-1,-1,-1]
+	NSmn3   = Int64[-1,-1,-1,-1]
+	NSmn4   = Int64[-1,-1,-1,-1]
+	NSmn6   = Int64[-1,-1,-1,-1]
+	NSmn2   = Int64[-1,-1,-1,-1]
+	NSmn5   = Int64[-1,-1,-1,-1]
+
+	# Term 1 creation/annihilation operators
+	cmat_dn_pm    = CAmatrix[]              # cmat_dn_pm is used by all, only define here
+
+	cdmat13_dn_op   = CAmatrix[]
+	cmat1_up_no    = CAmatrix[]
+	cdmat1_up_mn   = CAmatrix[]
+	# Term 3 creation/annihilation operators shares p->o with Term 1
+	cdmat3_up_no   = CAmatrix[]
+	cmat3_up_mn    = CAmatrix[]
+
+	# Term 4 creation/annihilation operators
+	cdmat46_up_op   = CAmatrix[]
+	cdmat4_dn_no    = CAmatrix[]
+	cmat4_up_mn    = CAmatrix[]
+	# Term 6 creation/annihilation operators shares p_o with Term 4
+	cmat6_up_no    = CAmatrix[]
+	cdmat6_dn_mn    = CAmatrix[]
+
+	# Term 2 creation/annihilation operators
+	cmat25_up_op   = CAmatrix[]
+	cdmat2_dn_no    = CAmatrix[]
+	cdmat2_up_mn    = CAmatrix[]
+	# Term 5 creation/annihilation operators shares p_o with Term 2
+	cdmat5_up_no    = CAmatrix[]
+	cdmat5_dn_mn    = CAmatrix[]
+
+	gf::TwoParticleFunction  = zeros(nw,nw,nw)
+
+	actuallyContributedSth = 0
+
+	# First create a sortting for all Eigenstates in order of increasing N,S, which makes the GF generation more efficient
+	NSperm = getNSperm(evallist)
+
+	E0 = minimum( first.(evallist) )
+
+	for m=1:length(evallist)
+	    if m%(round(Int64,length(evallist)/50)) == 0
+            print("\r"*lpad(round(Int64,m*100.0/length(evallist)),4)*"%")
+		end
+
+		Em    = evallist[NSperm[m]][1] -E0     # shift by E0 to avoid overflow
+		Nm    = round(Int64,evallist[NSperm[m]][2])
+		sm    = round(UInt64,evallist[NSperm[m]][3])
+		evecm = eveclist[NSperm[m]]
+		Sm    = spinConfig(sm,Nm,Nmax)
+		expFm = exp(-beta*Em) # exponential Boltzmann factor
+	
+		for n=1:length(evallist)
+			En    = evallist[NSperm[n]][1] -E0
+			Nn    = round(Int64,evallist[NSperm[n]][2])   
+			sn    = round(UInt64,evallist[NSperm[n]][3])
+			evecn = eveclist[NSperm[n]]
+			Sn    = spinConfig(sn,Nn,Nmax)
+			expFn = exp(-beta*En)
+
+			for o=1:length(evallist)
+				Eo    = evallist[NSperm[o]][1] -E0
+				No    = round(Int64,evallist[NSperm[o]][2])   
+				so    = round(UInt64,evallist[NSperm[o]][3])
+				eveco = eveclist[NSperm[o]]
+				So    = spinConfig(so,No,Nmax)
+				expFo = exp(-beta*Eo)
+
+				for p=1:length(evallist)
+					Ep    = evallist[NSperm[p]][1] -E0
+					Np    = round(Int64,evallist[NSperm[p]][2])   
+					sp    = round(UInt64,evallist[NSperm[p]][3])
+					evecp = eveclist[NSperm[p]]
+					Sp    = spinConfig(sp,Np,Nmax)
+
+					expFop = expFo+exp(-beta*Ep)
+					expFmp = expFm+exp(-beta*Ep)
+					expFnp = expFn-exp(-beta*Ep)
+			
+					# Exclude transitions too high in energy where all terms are zero and check for right m->p transition
+					if ( expFop+expFmp+expFnp > pNumerics.cutoff && Np==Nm-1 && Sp==Sm+1)
+			
+						# Check for new N,S combinations at which creation/annihilation matrices we need to update, m->p is used by all terms
+						if ( NSpm!=[Np,Sp, Nm,Sm] )
+							NSpm = [Np,Sp, Nm,Sm]
+							cmat_dn_pm = getCmatrix(2, allstates[Np+1][sp], allstates[Nm+1][sm]) 
+						end
+							
+						########################################################################################################
+						# Term 1 + 3 as defined in the pdf
+						if ( No==Np+1 && So==Sp-1) # check p->o transition which is the same for 1+3
+							# recalculate matrix used by Term 1 + 3
+							if ( NSop13!=[No,So, Np,Sp] )
+								NSop13=[No,So, Np,Sp]
+								cdmat13_dn_op = getCdagmatrix(2, allstates[No+1][so], allstates[Np+1][sp]) 
+							end
+							# This overlap is the same for 1+3
+							overlapopm = dot( eveco, cdmat13_dn_op*evecp )*dot( evecp, cmat_dn_pm*evecm )
+
+							if abs(overlapopm)>pNumerics.cutoff
+
+								# Term 1 ###############################################################################
+								if ( Nn==No-1 && Sn==So-1) # check o->n, n->m transition is automatically fulfilled then
+									# recalculate matrix
+									if ( NSno1!=[Nn,Sn, No,So] )
+										NSno1=[Nn,Sn, No,So]
+										cmat1_up_no = getCmatrix(1, allstates[Nn+1][sn], allstates[No+1][so]) 
+									end
+									if ( NSmn1!=[Nm,Sm, Nn,Sn] )
+										NSmn1=[Nm,Sm, Nn,Sn]
+										cdmat1_up_mn = getCdagmatrix(1, allstates[Nm+1][sm], allstates[Nn+1][sn]) 
+									end
+									# now we have everything
+									overlap = dot( evecm, cdmat1_up_mn*evecn )*dot( evecn, cmat1_up_no*eveco )*overlapopm
+									if abs(overlap)>pNumerics.cutoff
+										actuallyContributedSth += 1
+										for w2=1:nw    # Here loop over all frequencies, the first argument is vectorized
+											for w3=1:nw
+												gf[:,w2,w3] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w2],pFreq.iwf[w3],Em,En,Eo,Ep,beta) .*overlap
+											end
+										end
+									end # overlap cutoff Term 1
+								end #p->n Term 1
+
+								# Term 3 ###############################################################################
+								if ( Nn==No+1 && Sn==So+1) # check o->n, n->m transition is automatically fulfilled then
+									# recalculate matrix
+									if ( NSno3!=[Nn,Sn, No,So] )
+										NSno3=[Nn,Sn, No,So]
+										cdmat3_up_no = getCdagmatrix(1, allstates[Nn+1][sn], allstates[No+1][so])
+									end
+									if ( NSmn3!=[Nm,Sm, Nn,Sn] )
+										NSmn3!=[Nm,Sm, Nn,Sn]
+										cmat3_up_mn = getCmatrix(1, allstates[Nm+1][sm], allstates[Nn+1][sn])
+									end
+									# now we have everything
+									overlap = dot( evecm, cmat3_up_mn*evecn )*dot( evecn, cdmat3_up_no*eveco )*overlapopm
+									if abs(overlap)>pNumerics.cutoff
+										actuallyContributedSth += 1
+										for w1=1:nw    # Here loop over all frequencies, the first argument is vectorized
+											for w3=1:nw
+												gf[w1,:,w3] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w1],pFreq.iwf[w3],Em,En,Eo,Ep,beta) .*overlap
+											end
+										end
+									end # overlap cutoff Term 3
+								end #p->n Term 3
+
+							end # first overlap cutoff for Term 1+3 
+						end # p->o Transition for 1+3
+						########################################################################################################
+
+						########################################################################################################
+						# Term 4 + 6 as defined in the pdf
+						if ( No==Np+1 && So==Sp+1) # check p->o transition which is the same for 4+6
+							# recalculate matrix used by Term 4 + 6
+							if ( NSop46!=[No,So, Np,Sp] )
+								NSop46=[No,So, Np,Sp]
+								cdmat46_up_op = getCdagmatrix(1, allstates[No+1][so], allstates[Np+1][sp])
+							end
+							# This overlap is the same for 4+6
+							overlapopm = dot( eveco, cdmat46_up_op*evecp )*dot( evecp, cmat_dn_pm*evecm )
+
+							if abs(overlapopm)>pNumerics.cutoff
+
+								# Term 4 ###############################################################################
+								if ( Nn==No+1 && Sn==So-1) # check o->n, n->m transition is automatically fulfilled then
+									# recalculate matrix
+									if ( NSno4!=[Nn,Sn, No,So] )
+										NSno4=[Nn,Sn, No,So]
+										cdmat4_dn_no = getCdagmatrix(2, allstates[Nn+1][sn], allstates[No+1][so])
+									end
+									if ( NSmn4!=[Nm,Sm, Nn,Sn] )
+										NSmn4=[Nm,Sm, Nn,Sn]
+										cmat4_up_mn = getCmatrix(1, allstates[Nm+1][sm], allstates[Nn+1][sn])
+									end
+									# now we have everything
+									overlap = dot( evecm, cmat4_up_mn*evecn )*dot( evecn, cdmat4_dn_no*eveco )*overlapopm
+									if abs(overlap)>pNumerics.cutoff
+										actuallyContributedSth += 1
+										for w3=1:nw    # Here loop over all frequencies, the first argument is vectorized
+											for w1=1:nw
+												gf[w1,:,w3] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w3],pFreq.iwf[w1],Em,En,Eo,Ep,beta) .*overlap
+											end
+										end
+									end # overlap cutoff Term 4
+								end #p->n Term 1
+
+								# Term 6 ###############################################################################
+								if ( Nn==No-1 && Sn==So-1) # check o->n, n->m transition is automatically fulfilled then
+									# recalculate matrix
+									if ( NSno6!=[Nn,Sn, No,So] )
+										NSno6=[Nn,Sn, No,So]
+										cmat6_up_no = getCmatrix(1, allstates[Nn+1][sn], allstates[No+1][so])
+									end
+									if ( NSmn6!=[Nm,Sm, Nn,Sn] )
+										NSmn6!=[Nm,Sm, Nn,Sn]
+										cdmat6_dn_mn = getCdagmatrix(2, allstates[Nm+1][sm], allstates[Nn+1][sn])
+									end
+									# now we have everything
+									overlap = dot( evecm, cdmat6_dn_mn*evecn )*dot( evecn, cmat6_up_no*eveco )*overlapopm
+									if abs(overlap)>pNumerics.cutoff
+										actuallyContributedSth += 1
+										for w2=1:nw    # Here loop over all frequencies, the first argument is vectorized
+											for w1=1:nw
+												gf[w1,w2,:] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w2],pFreq.iwf[w1],Em,En,Eo,Ep,beta) .*overlap
+											end
+										end
+									end # overlap cutoff Term 6
+								end #p->n Term 6
+
+							end # first overlap cutoff for Term 4+6
+						end # p->o Transition for 4+6
+						########################################################################################################
+
+						########################################################################################################
+						# Term 2 + 5 as defined in the pdf
+						if ( No==Np-1 && So==Sp-1) # check p->o transition which is the same for 2+5
+							# recalculate matrix used by Term 2+5
+							if ( NSop25!=[No,So, Np,Sp] )
+								NSop25=[No,So, Np,Sp]
+								cmat25_up_op = getCmatrix(1, allstates[No+1][so], allstates[Np+1][sp])
+							end
+							# This overlap is the same for 2+5
+							overlapopm = dot( eveco, cmat25_up_op*evecp )*dot( evecp, cmat_dn_pm*evecm )
+
+							if abs(overlapopm)>pNumerics.cutoff
+
+								# Term 2 ###############################################################################
+								if ( Nn==No+1 && Sn==So-1) # check o->n, n->m transition is automatically fulfilled then
+									# recalculate matrix
+									if ( NSno2!=[Nn,Sn, No,So] )
+										NSno2=[Nn,Sn, No,So]
+										cdmat2_dn_no = getCdagmatrix(2, allstates[Nn+1][sn], allstates[No+1][so])
+									end
+									if ( NSmn2!=[Nm,Sm, Nn,Sn] )
+										NSmn2=[Nm,Sm, Nn,Sn]
+										cdmat2_up_mn = getCdagmatrix(1, allstates[Nm+1][sm], allstates[Nn+1][sn])
+									end
+									# now we have everything
+									overlap = dot( evecm, cdmat2_up_mn*evecn )*dot( evecn, cdmat2_dn_no*eveco )*overlapopm
+									if abs(overlap)>pNumerics.cutoff
+										actuallyContributedSth += 1
+										for w3=1:nw    # Here loop over all frequencies, the first argument is vectorized
+											for w2=1:nw
+												gf[:,w2,w3] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w3],pFreq.iwf[w2],Em,En,Eo,Ep,beta) .*overlap
+											end
+										end
+									end # overlap cutoff Term 2
+								end #p->n Term 2
+
+								# Term 5 ###############################################################################
+								if ( Nn==No+1 && Sn==So+1) # check o->n, n->m transition is automatically fulfilled then
+									# recalculate matrix
+									if ( NSno5!=[Nn,Sn, No,So] )
+										NSno5=[Nn,Sn, No,So]
+										cdmat5_up_no = getCdagmatrix(1, allstates[Nn+1][sn], allstates[No+1][so])
+									end
+									if ( NSmn5!=[Nm,Sm, Nn,Sn] )
+										NSmn5!=[Nm,Sm, Nn,Sn]
+										cdmat5_dn_mn = getCdagmatrix(2, allstates[Nm+1][sm], allstates[Nn+1][sn])
+									end
+									# now we have everything
+									overlap = dot( evecm, cdmat5_dn_mn*evecn )*dot( evecn, cdmat5_up_no*eveco )*overlapopm
+									if abs(overlap)>pNumerics.cutoff
+										actuallyContributedSth += 1
+										for w1=1:nw    # Here loop over all frequencies, the first argument is vectorized
+											for w2=1:nw
+												gf[w1,w2,:] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w1],pFreq.iwf[w2],Em,En,Eo,Ep,beta) .*overlap
+											end
+										end
+									end # overlap cutoff Term 5
+								end #p->n Term 5
+
+							end # first overlap cutoff for Term 2+5
+						end # p->o Transition for 2+5
+						########################################################################################################
+
+					end # if exp(-beta*E) > cutoff for all terms and m->p transition for all terms
+
+				end # p loop
+			end # o loop
+		end # n loop
+	end # m loop
+    println("\rdone!")
+	
+	#normalize
+	gf ./= getZ(evallist,beta)
+
+	@printf("In the sum over %i^4 orbitals only %i terms contributed (%.1E%%) \n",length(evallist),actuallyContributedSth,actuallyContributedSth*100.0/length(evallist)^4 )
+
+	return gf
+end 
+
+################################################################################################################
 
 """
     getSigma(G0, G)

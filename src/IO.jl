@@ -51,6 +51,35 @@ function writeGF(filename::String,G::SingleParticleFunction,mgrid)
 end
 
 """
+    writeGF2part(filename, G, w)
+
+Writes a Green's function `G(nw,nw,nw)` in human readable (fixed column width format) form into a file.
+`mgrid` is the associated Matsuabra grid (as indices or evaluated).
+"""
+function writeGF2part(filename::String,G::TwoParticleFunction,mgrid)
+	nw1=size(G,1)
+	nw2=size(G,2)
+	nw3=size(G,3)
+
+	open(filename, "w") do outf
+		for n1=1:nw1
+			ww1 = mgrid[n1]
+			for n2=1:nw2
+				ww1 = mgrid[n1]
+				ww2 = mgrid[n2]
+				@printf(outf, "%.7E  %.7E  ", ww1,ww2)
+
+				reg = real(G[n1,n2,1])
+				img = imag(G[n1,n2,1])
+				@printf(outf, "%.7E  %.7E   ", reg, img)
+
+				write(outf, "\n" )
+			end # n2
+			write(outf, "\n" )
+		end # n1
+	end # close
+end
+"""
     printStateInfo(allstates)
 
 Print all states and N S quantum numbers

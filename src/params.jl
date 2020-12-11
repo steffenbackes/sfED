@@ -13,6 +13,7 @@ const EigenvectorMatrix = Array{Complex{Float32},2}
 const FrequencyMesh     = Array{Float32,1}
 const FrequencyMeshCplx = Array{Complex{Float32},1}
 const SingleParticleFunction = Array{Complex{Float32},3}
+const TwoParticleFunction = Array{Complex{Float32},3}  # single orbital for now, depends on 3 frequencies
 
 struct ModelParameters
 	norb   ::UInt32    # Number of Orbitals
@@ -56,6 +57,10 @@ struct FrequencyMeshes
 	# Fermionic Matsubara frequency mesh
 	iwf::FrequencyMesh # frequency mesh
 
+	# Bosonic Matsubara frequency mesh
+	ivf::FrequencyMesh # frequency mesh
+
 	FrequencyMeshes(;nw,wmin,wmax,iwmax,beta) = new( [wmin+n*(wmax-wmin)/nw for n=0:nw-1], 
-	                                                [(2*n+1)*pi/beta for n=0:round(Int32, (iwmax*beta/pi-1)/2)-1] )
+	                                                 [(2*n+1)*pi/beta for n=0:round(Int32, (iwmax*beta/pi-1)/2)-1],
+	                                                 [(2*n+0)*pi/beta for n=0:round(Int32, (iwmax*beta/pi-1)/2) ] )
 end
