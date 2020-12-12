@@ -37,6 +37,13 @@ return the sign when creating/annihilating an electron at position i in state.
 """
 getCsign(i::Int64,state::Fockstate) = (-1)^sum(state[1:i-1])
 
+"""
+    getNmaxFromAllstates(allstates)
+
+return the maximum number of electrons possible determined from the allstates array
+"""
+getNmaxFromAllstates(allstates::NSstates) = UInt32(size(allstates)[1]-1)
+
 ########################################################################
 
 ########################################################################

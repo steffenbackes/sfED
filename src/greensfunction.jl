@@ -257,7 +257,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 					pModel::ModelParameters,
 					pSimulation::SimulationParameters,
 					pFreq::FrequencyMeshes,
-					pNumerics::NumericalParameters)::TwoParticleFunction
+					pNumerics::NumericalParameters)::Tuple{TwoParticleFunction,Array{Array{Float64,1},1}}
 
 	# we restrict this calculation to one orbital !
 	#norb=1
@@ -322,8 +322,19 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 
 	E0 = minimum( first.(evallist) )
 
+	evalContributions::Array{Array{Float64,1},1} = []
+	# prefill the evalContributions array
 	for m=1:length(evallist)
-	    if m%(round(Int64,length(evallist)/50)) == 0
+		Em    = evallist[NSperm[m]][1] -E0 
+		Nm    = round(Int64,evallist[NSperm[m]][2])
+		sm    = round(UInt64,evallist[NSperm[m]][3])
+		Sm    = spinConfig(sm,Nm,Nmax)
+		push!( evalContributions, [Nm,Sm,Em,0.0] )
+	end
+
+	# Now calculate the 2particle GF
+	for m=1:length(evallist)
+		if m%(max(1,round(Int64,length(evallist)/100.0))) == 0
             print("\r"*lpad(round(Int64,m*100.0/length(evallist)),4)*"%")
 		end
 
@@ -333,7 +344,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 		evecm = eveclist[NSperm[m]]
 		Sm    = spinConfig(sm,Nm,Nmax)
 		expFm = exp(-beta*Em) # exponential Boltzmann factor
-	
+
 		for n=1:length(evallist)
 			En    = evallist[NSperm[n]][1] -E0
 			Nn    = round(Int64,evallist[NSperm[n]][2])   
@@ -398,6 +409,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cdmat1_up_mn*evecn )*dot( evecn, cmat1_up_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										evalContributions[m][4] += abs(overlap)
+										evalContributions[n][4] += abs(overlap)
+										evalContributions[o][4] += abs(overlap)
+										evalContributions[p][4] += abs(overlap)
 										gfnorm += -real(overlap)
 										for w2=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w3=1:nw
@@ -422,6 +437,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cmat3_up_mn*evecn )*dot( evecn, cdmat3_up_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										evalContributions[m][4] += abs(overlap)
+										evalContributions[n][4] += abs(overlap)
+										evalContributions[o][4] += abs(overlap)
+										evalContributions[p][4] += abs(overlap)
 										gfnorm += real(overlap)
 										for w1=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w3=1:nw
@@ -463,6 +482,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cmat4_up_mn*evecn )*dot( evecn, cdmat4_dn_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										evalContributions[m][4] += abs(overlap)
+										evalContributions[n][4] += abs(overlap)
+										evalContributions[o][4] += abs(overlap)
+										evalContributions[p][4] += abs(overlap)
 										gfnorm += -real(overlap)
 										for w3=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w1=1:nw
@@ -487,6 +510,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cdmat6_dn_mn*evecn )*dot( evecn, cmat6_up_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										evalContributions[m][4] += abs(overlap)
+										evalContributions[n][4] += abs(overlap)
+										evalContributions[o][4] += abs(overlap)
+										evalContributions[p][4] += abs(overlap)
 										gfnorm += real(overlap)
 										for w2=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w1=1:nw
@@ -528,6 +555,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cdmat2_up_mn*evecn )*dot( evecn, cdmat2_dn_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										evalContributions[m][4] += abs(overlap)
+										evalContributions[n][4] += abs(overlap)
+										evalContributions[o][4] += abs(overlap)
+										evalContributions[p][4] += abs(overlap)
 										gfnorm += real(overlap)
 										for w3=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w2=1:nw
@@ -552,6 +583,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cdmat5_dn_mn*evecn )*dot( evecn, cdmat5_up_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										evalContributions[m][4] += abs(overlap)
+										evalContributions[n][4] += abs(overlap)
+										evalContributions[o][4] += abs(overlap)
+										evalContributions[p][4] += abs(overlap)
 										gfnorm += -real(overlap)
 										for w1=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w2=1:nw
@@ -578,9 +613,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 	gfnorm /= getZ(evallist,beta)
 
 	@printf("2-particle Green's function normalized to %.3f \n",gfnorm)
-	@printf("In the sum over %i^4 Eigenstates only %i terms contributed (%.1E%%) \n",length(evallist),actuallyContributedSth,actuallyContributedSth*100.0/length(evallist)^4 )
+	@printf("In the sum over %i^4=%.1e Eigenstates only %i terms contributed ( %.1e %%) \n",
+	        length(evallist),(length(evallist)*1.0)^4,actuallyContributedSth,actuallyContributedSth*100*(1.0/length(evallist))^4 )
 
-	return gf
+	return gf,evalContributions
 end 
 
 ################################################################################################################

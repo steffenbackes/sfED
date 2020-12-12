@@ -35,6 +35,7 @@ struct SimulationParameters
 	
 	# Constructor
 	SimulationParameters(;U,J,t,mu,beta,gf_orbs) = new(U,J,U-2*J,t,mu,beta,gf_orbs)
+	SimulationParameters(;U,Up,J,t,mu,beta,gf_orbs) = new(U,Up,J,t,mu,beta,gf_orbs)
 end
 
 struct NumericalParameters

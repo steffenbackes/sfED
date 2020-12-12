@@ -86,7 +86,7 @@ Print all states and N S quantum numbers
 """
 function printStateInfo(allstates::NSstates)
 	println("We have the following states:")
-	Nmax = length(allstates)
+	Nmax = getNmaxFromAllstates(allstates)
 	for n=0:Nmax
 		for s=1:noSpinConfig(n,Nmax)
 			println("N=",n,", S=",spinConfig(s,n,Nmax))
@@ -105,14 +105,14 @@ Print the Eigenvalues and some info
 function printEvalInfo(evallist::Array{Array{Eigenvalue,1},1},
                        eveclist::Array{Eigenvector,1},
    					     allstates::NSstates)
-	Nmax = UInt32(length(allstates))
+	Nmax = getNmaxFromAllstates(allstates)
 	E0 = minimum(first.(evallist))
 	perm = sortperm(first.(evallist))
 
 	printlimit = round(Int64,min(10, length(evallist)/2))
 
 	println("Eigenstates: (",printlimit," lowest and highest calculated)")
-	for i=vcat(1:printlimit, length(evallist)-printlimit:length(evallist))
+	for i=vcat(1:printlimit, length(evallist)-printlimit+1:length(evallist))
 		E = evallist[perm][i][1] -E0
 		N = round(Int64,evallist[perm][i][2])
 		s = round(UInt64,evallist[perm][i][3])

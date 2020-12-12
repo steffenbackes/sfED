@@ -8,7 +8,7 @@ TODO: this should be overloaded to accept text file or command line inputs.
 function getEps(pNumerics::NumericalParameters, pModel::ModelParameters)
 	eps = zeros(Float64,pModel.Nmax)
 	for i=0:pModel.norb-1              # Just shift one orbital down, the other up by +-1
-		eps[2*i+1] = 1.0*(-1)^i    # up spin
+		eps[2*i+1] = 0.0*(-1)^i    # up spin
 		eps[2*i+2] = eps[2*i+1]    #dn spin
 	end
 
@@ -38,12 +38,22 @@ TODO: this should be overloaded to accept text file or command line inputs.
 function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
    tmatrix = Array{Float64}(undef,pModel.norb,pModel.norb)
 	t = pSimulation.t
-	if pModel.norb==4
-		# A B dimer
-		tmatrix = -[0 0 t 0;
-	  	 	         0 0 0 t;
-	               t 0 0 0;
-					   0 t 0 0]
+	if pModel.norb==2
+		# A B dimer with one orbital per site
+		tmatrix = -[0 t;
+					   t 0]
+	elseif pModel.norb==4
+		# A B dimer with two orbitals per site
+		#tmatrix = -[0 0 t 0;
+	  	# 	         0 0 0 t;
+	   #            t 0 0 0;
+	#				   0 t 0 0]
+		# A B
+		# C D plaquette with one orbital per site
+		tmatrix = -[0 t t 0;
+	  	 	         t 0 0 t;
+	               t 0 0 t;
+					   0 t t 0]
 	elseif pModel.norb==5
 		# Use Julian's AIM benchmark system
 		t1 = 0.27400603088302322
@@ -56,7 +66,7 @@ function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
 	               t3 0 0 0 0;
 					   t4 0 0 0 0]
 	elseif pModel.norb==6
-		# A B C trimer
+		# A B C trimer with two orbitals per site
 		tmatrix = -[0 0 t 0 0 0;
 	  	 	         0 0 0 t 0 0;
 	  	 	         t 0 0 0 t 0;
@@ -64,7 +74,7 @@ function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
 	               0 0 t 0 0 0;
 					   0 0 0 t 0 0]
 	elseif pModel.norb==8
-		# A B plaquette
+		# A B plaquette with two orbitals per site
 		# C D
 		tmatrix = -[0 0 t 0 t 0 0 0;
 	  	 	         0 0 0 t 0 t 0 0;
@@ -333,7 +343,7 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 						states::Array{Fockstate,1},
 						pNumerics::NumericalParameters)::Hamiltonian
 
-	println("!!WARNING: To simulate an AIM we excluded the bath states from the chemical potential in hamiltonian.jl !!!")
+	#println("!!WARNING: To simulate an AIM we excluded the bath states from the chemical potential in hamiltonian.jl !!!")
 
 	# Set up index array for the sparse Hamiltonian Matrix
 	HamiltonianElementsI = Int64[]
@@ -342,8 +352,8 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 	for i=1:length(states)
 		Hiitmp = 0.0
 		# set the diagonals 
-		#Hiitmp += -mu*sum(states[i])     # chemical potential
-		Hiitmp += -mu*sum(states[i][1:2])     # chemical potential
+		Hiitmp += -mu*sum(states[i])     # chemical potential
+		#Hiitmp += -mu*sum(states[i][1:2])     # chemical potential
 
 		Hiitmp += sum(eps .* states[i] ) # onsite levels
 	
@@ -414,7 +424,7 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 	evallist::Array{Array{Eigenvalue,1},1}          = [] # this list stores the lowest of the smallest eigenvalues and N, S quantum numbers
 	eveclist::Array{Eigenvector,1} = [] # this list stores the lowest of the smallest eigenvectors
 
-	Nmax = UInt32(size(allstates)[1]-1)
+	Nmax = getNmaxFromAllstates(allstates)
 	for n=0:Nmax
 		for s=1:noSpinConfig(n,Nmax)
 			dim = length(allstates[n+1][s])
