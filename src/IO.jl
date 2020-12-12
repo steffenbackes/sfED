@@ -209,3 +209,30 @@ function printGFnorm(gfdiagnorm::Array{Float64,1}, highestEval::Eigenvalue)
 		@printf("%5.1f%% of all states are in the energy window [%+4.1f,%+4.1f] \n",minimum(gfdiagnorm)*100,-highestEval,highestEval)
 	end
 end
+
+####################################################################################
+
+"""
+    writePossibleTransitions(filename,overlaps)
+
+Write out the overlap elements between all Eigenstates acting on c/c^dagger
+"""
+function writePossibleTransitions(filename::String,overlaps::Array{Float32,2} )
+	nstates = size(overlaps)[1]
+	open(filename, "w") do outf
+		for n1 in 1:nstates
+			for n2 in 1:nstates
+				@printf(outf, "%i  %i  %.7E \n", n1,n2,  overlaps[n1,n2])
+				@printf(outf, "%i  %i  %.7E \n", n1,n2+1,overlaps[n1,n2])
+			end # n2
+			@printf(outf,"\n")
+			for n2 in 1:nstates
+				@printf(outf, "%i  %i  %.7E \n", n1+1,n2,  overlaps[n1,n2])
+				@printf(outf, "%i  %i  %.7E \n", n1+1,n2+1,overlaps[n1,n2])
+			end # n2
+			@printf(outf,"\n")
+		end # n1
+	end # close file
+end
+
+################################################################################################################

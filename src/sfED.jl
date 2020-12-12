@@ -29,7 +29,7 @@ function example_run()
 					 			   iwmax=80.0,
 								   beta=pSimulation.beta)
 
-	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=100, nevalsTotalMax=400)
+	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=60, nevalsTotalMax=150)
 
 	println( "We have $(pModel.norb) Orbitals, #$(pModel.Nstates) states and $(pModel.Nmax) max. number of electrons" )
 	
@@ -55,6 +55,10 @@ function example_run()
 	println("Groundstate energy E0=", minimum( first.(evallist) )  )
 	println("Partition function Z=",getZ(evallist,pSimulation.beta) )
 	printEvalInfo(evallist,eveclist,allstates)
+
+	println("Determining overlaps between eigenvectors...")
+	overlaps,possibleTransitions = getPossibleTransitions(evallist,eveclist,allstates,pNumerics)
+	writePossibleTransitions("possibleTransitions.dat",overlaps)
 	
 	println("Create interacting single-particle Green's function...")
 	gf_w, gf_iw, evalContributions = getGF(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
@@ -69,11 +73,11 @@ function example_run()
 	writeEvalContributionsSectors("evalContributionsSectors.dat", evalContributions)
 	writeEvalContributions("evalContributions.dat", evalContributions)
 
-	println("Create interacting two-particle Green's function...")
-	gf2part,evalContributions = getGF2part(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
-	writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
-	writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
-	writeEvalContributions("eval2partContributions.dat", evalContributions)
+#	println("Create interacting two-particle Green's function...")
+#	gf2part,evalContributions = getGF2part(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+#	writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
+#	writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
+#	writeEvalContributions("eval2partContributions.dat", evalContributions)
 
 	end # end example function
 end

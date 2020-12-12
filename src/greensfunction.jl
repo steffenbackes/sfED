@@ -622,6 +622,80 @@ end
 ################################################################################################################
 
 """
+    getPossibleTransitions(evallist,eveclist,allstates,pNumerics)
+
+Calculate the overlap elements between all Eigenstates acting on c/c^dagger
+"""
+function getPossibleTransitions(evallist::Array{Array{Eigenvalue,1},1},
+                                eveclist::Array{Eigenvector,1},
+				   					  allstates::NSstates,
+										  pNumerics::NumericalParameters)
+	Nmax = getNmaxFromAllstates(allstates)
+	NSperm = getNSperm(evallist)
+
+	nstates = length(eveclist)
+	overlaps = zeros(Float32,nstates,nstates)
+
+	possibleTransitions = [ [ Int64[] for i=1:nstates] for a=1:4 ] # TODO: Array like ['crea','up',m]
+	# 1 = crea up
+	# 2 = anni up
+	# 3 = crea dn
+	# 4 = anni dn
+
+	for n1 in 1:nstates
+		N1    = round(Int64,evallist[NSperm[n1]][2])
+		s1    = round(UInt64,evallist[NSperm[n1]][3])
+		S1    = spinConfig(s1,N1,Nmax)
+		evec1 = eveclist[NSperm[n1]]
+
+		for n2 in 1:nstates
+			N2    = round(Int64,evallist[NSperm[n2]][2])
+			s2    = round(UInt64,evallist[NSperm[n2]][3])
+			S2    = spinConfig(s2,N2,Nmax)
+			evec2 = eveclist[NSperm[n2]]
+
+			# Cdagger on first orb, up spin <1|c^dag|2>
+			if N1==N2+1 && S1==S2+1
+				cdagmat = getCdagmatrix(1, allstates[N1+1][s1], allstates[N2+1][s2])
+				overlaps[n1,n2] = abs( dot( evec1, cdagmat * evec2 ) )
+				if overlaps[n1,n2] > pNumerics.cutoff
+					push!( possibleTransitions[1][n1], n2 )
+				end
+			end # if
+
+			# C on first orb, up spin <1|c|2>
+			if N1==N2-1 && S1==S2-1
+				cmat = getCmatrix(1, allstates[N1+1][s1], allstates[N2+1][s2])
+				if abs( dot( evec1, cmat * evec2 ) ) > pNumerics.cutoff
+					push!( possibleTransitions[2][n1], n2 )
+				end
+			end # if
+
+			# Cdagger on first orb, dn spin <1|c^dag|2>
+			if N1==N2+1 && S1==S2-1
+				cdagmat = getCdagmatrix(2, allstates[N1+1][s1], allstates[N2+1][s2])
+				if abs( dot( evec1, cdagmat * evec2 ) ) > pNumerics.cutoff
+					push!( possibleTransitions[3][n1], n2 )
+				end
+			end # if
+
+			# C on first orb, dn spin <1|c|2>
+			if N1==N2-1 && S1==S2+1
+				cmat = getCmatrix(2, allstates[N1+1][s1], allstates[N2+1][s2])
+				if abs( dot( evec1, cmat * evec2 ) ) > pNumerics.cutoff
+					push!( possibleTransitions[4][n1], n2 )
+				end
+			end # if
+
+		end # n2
+		#println( n1,": N=",N1,", S=",S1," -> ",length(possibleTransitions[1][n1])," (",round(length(possibleTransitions[1][n1])*100.0/nstates,digits=2)," %)" )
+	end # n1
+	return overlaps, possibleTransitions
+end
+
+################################################################################################################
+
+"""
     getSigma(G0, G)
 
 Calculate the Selfenergy from `G0` and `G`
