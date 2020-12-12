@@ -12,13 +12,13 @@ include("IO.jl")
 include("greensfunction.jl")
 
 function example_run()
-	norb = 4
-	U = 3.0
-	J = 0.3
-	Up = U-2*J
+	norb = 5
+	U = 1.0
+	J = 0.0
+	Up = 0.0 # U-2*J
 	t = 1.0
 	mu = (U+Up+Up-J)/2      # half filling
-	beta = 40.0
+	beta = 25.0
 	#gf_orbs = [i for i=1:norb]
 	gf_orbs = [1]
 
@@ -29,7 +29,7 @@ function example_run()
 					 			   iwmax=80.0,
 								   beta=pSimulation.beta)
 
-	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=30, nevalsTotalMax=150)
+	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=35, nevalsTotalMax=400)
 
 	println( "We have $(pModel.norb) Orbitals, #$(pModel.Nstates) states and $(pModel.Nmax) max. number of electrons" )
 	

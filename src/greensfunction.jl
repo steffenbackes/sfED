@@ -264,6 +264,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 	Nmax=UInt32(pModel.Nmax)
 	beta = pSimulation.beta
 	nw = 5
+	println("Generating the two-particle GF on ",nw,"^3 frequencies...")
 
 	# arrays to check when we need to recalculate the cdagger cmatrices
 	NSpm   = Int64[-1,-1,-1,-1]
@@ -312,6 +313,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 	cdmat5_dn_mn    = CAmatrix[]
 
 	gf::TwoParticleFunction  = zeros(nw,nw,nw)
+	gfnorm = 0.0
 
 	actuallyContributedSth = 0
 
@@ -396,9 +398,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cdmat1_up_mn*evecn )*dot( evecn, cmat1_up_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										gfnorm += -real(overlap)
 										for w2=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w3=1:nw
-												gf[:,w2,w3] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w2],pFreq.iwf[w3],Em,En,Eo,Ep,beta) .*overlap
+												gf[:,w2,w3] += -getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w2],pFreq.iwf[w3],Em,En,Eo,Ep,beta) .*overlap
 											end
 										end
 									end # overlap cutoff Term 1
@@ -419,6 +422,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cmat3_up_mn*evecn )*dot( evecn, cdmat3_up_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										gfnorm += real(overlap)
 										for w1=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w3=1:nw
 												gf[w1,:,w3] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w1],pFreq.iwf[w3],Em,En,Eo,Ep,beta) .*overlap
@@ -459,9 +463,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cmat4_up_mn*evecn )*dot( evecn, cdmat4_dn_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										gfnorm += -real(overlap)
 										for w3=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w1=1:nw
-												gf[w1,:,w3] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w3],pFreq.iwf[w1],Em,En,Eo,Ep,beta) .*overlap
+												gf[w1,:,w3] += -getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w3],pFreq.iwf[w1],Em,En,Eo,Ep,beta) .*overlap
 											end
 										end
 									end # overlap cutoff Term 4
@@ -482,6 +487,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cdmat6_dn_mn*evecn )*dot( evecn, cmat6_up_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										gfnorm += real(overlap)
 										for w2=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w1=1:nw
 												gf[w1,w2,:] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w2],pFreq.iwf[w1],Em,En,Eo,Ep,beta) .*overlap
@@ -522,6 +528,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cdmat2_up_mn*evecn )*dot( evecn, cdmat2_dn_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										gfnorm += real(overlap)
 										for w3=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w2=1:nw
 												gf[:,w2,w3] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w3],pFreq.iwf[w2],Em,En,Eo,Ep,beta) .*overlap
@@ -545,9 +552,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 									overlap = dot( evecm, cdmat5_dn_mn*evecn )*dot( evecn, cdmat5_up_no*eveco )*overlapopm
 									if abs(overlap)>pNumerics.cutoff
 										actuallyContributedSth += 1
+										gfnorm += -real(overlap)
 										for w1=1:nw    # Here loop over all frequencies, the first argument is vectorized
 											for w2=1:nw
-												gf[w1,w2,:] += getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w1],pFreq.iwf[w2],Em,En,Eo,Ep,beta) .*overlap
+												gf[w1,w2,:] += -getFuckingLarge2partTerm(pFreq.iwf[1:nw],pFreq.iwf[w1],pFreq.iwf[w2],Em,En,Eo,Ep,beta) .*overlap
 											end
 										end
 									end # overlap cutoff Term 5
@@ -567,8 +575,10 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 	
 	#normalize
 	gf ./= getZ(evallist,beta)
+	gfnorm /= getZ(evallist,beta)
 
-	@printf("In the sum over %i^4 orbitals only %i terms contributed (%.1E%%) \n",length(evallist),actuallyContributedSth,actuallyContributedSth*100.0/length(evallist)^4 )
+	@printf("2-particle Green's function normalized to %.3f \n",gfnorm)
+	@printf("In the sum over %i^4 Eigenstates only %i terms contributed (%.1E%%) \n",length(evallist),actuallyContributedSth,actuallyContributedSth*100.0/length(evallist)^4 )
 
 	return gf
 end 

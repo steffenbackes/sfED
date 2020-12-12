@@ -12,6 +12,16 @@ function getEps(pNumerics::NumericalParameters, pModel::ModelParameters)
 		eps[2*i+2] = eps[2*i+1]    #dn spin
 	end
 
+	if pModel.norb==5  # Use Julian's AIM benchmark system
+		for s=1:2
+			eps[2*0+s] = 0.0
+			eps[2*1+s] = 1.0387225695696338   
+			eps[2*2+s] = 0.14264424358261263  
+			eps[2*3+s] = -1.0387225695696338  
+			eps[2*4+s] = -0.14264424358261263 
+		end
+	end
+
 	# add a very small random term to each local level to lift degeneracy and improve numerical stability
 	for i=1:pModel.Nmax
 		eps[i] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
@@ -34,6 +44,17 @@ function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
 	  	 	         0 0 0 t;
 	               t 0 0 0;
 					   0 t 0 0]
+	elseif pModel.norb==5
+		# Use Julian's AIM benchmark system
+		t1 = 0.27400603088302322
+		t2 = 0.22567506210351471
+		t3 = 0.27400603088302322
+		t4 = 0.22567506210351471
+		tmatrix =  [0 t1 t2 t3 t4;
+	  	 	         t1 0 0 0 0;
+	  	 	         t2 0 0 0 0;
+	               t3 0 0 0 0;
+					   t4 0 0 0 0]
 	elseif pModel.norb==6
 		# A B C trimer
 		tmatrix = -[0 0 t 0 0 0;
@@ -91,6 +112,18 @@ function getUJmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
 		           J 0 0 0;
 					  0 0 0 J;
 					  0 0 J 0]
+	elseif pModel.norb==5
+		# Take julian's AIM benchmark
+		Umatrix = [U 0 0 0 0;   # single orbital AIM and 4 bath sites
+		           0 0 0 0 0;
+					  0 0 0 0 0;
+					  0 0 0 0 0;
+					  0 0 0 0 0]
+		Jmatrix = [0 0 0 0 0;
+		           0 0 0 0 0;
+					  0 0 0 0 0;
+					  0 0 0 0 0;
+					  0 0 0 0 0.0]
 	elseif pModel.norb==6
 		# A B C trimer
 		Umatrix = [U Up 0 0 0 0; # we assume two orbitals per site
@@ -300,6 +333,8 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 						states::Array{Fockstate,1},
 						pNumerics::NumericalParameters)::Hamiltonian
 
+	println("!!WARNING: To simulate an AIM we excluded the bath states from the chemical potential in hamiltonian.jl !!!")
+
 	# Set up index array for the sparse Hamiltonian Matrix
 	HamiltonianElementsI = Int64[]
 	HamiltonianElementsJ = Int64[]
@@ -307,7 +342,9 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 	for i=1:length(states)
 		Hiitmp = 0.0
 		# set the diagonals 
-		Hiitmp += -mu*sum(states[i])     # chemical potential
+		#Hiitmp += -mu*sum(states[i])     # chemical potential
+		Hiitmp += -mu*sum(states[i][1:2])     # chemical potential
+
 		Hiitmp += sum(eps .* states[i] ) # onsite levels
 	
 		# get Density-Density interaction terms
@@ -403,30 +440,30 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
 			println("Done!")
 	
 			# now sort and trim the list of eigenvalues and vectors since we only want to keep nevalsTotalMax
-			#perm = sortperm(first.(evallist))
-			#evallist =copy( ( evallist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
-			#eveclist =copy( ( eveclist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
+			perm = sortperm(first.(evallist))
+			evallist =copy( ( evallist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
+			eveclist =copy( ( eveclist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
 
 			###########################################################################
 			# THIS IS STILL TESTING STATUS
-			i0 = argmin( first.(evallist) )
-			N0 = evallist[i0][2]
-			S0 = evallist[i0][4]
-
-			NSlist = [ [evallist[i][2],evallist[i][4]] for i=1:length(evallist)  ]
-			connectedSpace  = findall(x->(x==[N0-1,S0-1] || x==[N0+1,S0+1]), NSlist)
-			restSpace       = findall(x->(x!=[N0-1,S0-1] && x!=[N0+1,S0+1]), NSlist)
-
-			restEvals = evallist[restSpace]
-			restEvecs = eveclist[restSpace]
-
-			perm = sortperm(first.(restEvals))
-
-			take=min(pNumerics.nevalsPerSubspace,length(restEvals))
-			keep = max(0, pNumerics.nevalsTotalMax-take-length(connectedSpace) )
-			
-			evallist = vcat(  copy(restEvals[perm][1:take]) , copy(evallist[connectedSpace]), copy(restEvals[perm][take+1:min(keep,end)])   )
-			eveclist = vcat(  copy(restEvecs[perm][1:take]) , copy(eveclist[connectedSpace]), copy(restEvecs[perm][take+1:min(keep,end)])   )
+#			i0 = argmin( first.(evallist) )
+#			N0 = evallist[i0][2]
+#			S0 = evallist[i0][4]
+#
+#			NSlist = [ [evallist[i][2],evallist[i][4]] for i=1:length(evallist)  ]
+#			connectedSpace  = findall(x->(x==[N0-1,S0-1] || x==[N0+1,S0+1]), NSlist)
+#			restSpace       = findall(x->(x!=[N0-1,S0-1] && x!=[N0+1,S0+1]), NSlist)
+#
+#			restEvals = evallist[restSpace]
+#			restEvecs = eveclist[restSpace]
+#
+#			perm = sortperm(first.(restEvals))
+#
+#			take=min(pNumerics.nevalsPerSubspace,length(restEvals))
+#			keep = max(0, pNumerics.nevalsTotalMax-take-length(connectedSpace) )
+#			
+#			evallist = vcat(  copy(restEvals[perm][1:take]) , copy(evallist[connectedSpace]), copy(restEvals[perm][take+1:min(keep,end)])   )
+#			eveclist = vcat(  copy(restEvecs[perm][1:take]) , copy(eveclist[connectedSpace]), copy(restEvecs[perm][take+1:min(keep,end)])   )
 			###########################################################################
 
 			
