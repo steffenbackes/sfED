@@ -19,17 +19,17 @@ function example_run()
 	t = 1.0
 	mu = (U+Up+Up-J)/2      # half filling
 	beta = 100.0
-	#gf_orbs = [i for i=1:norb]
-	gf_orbs = [1]
+	gf_flav = [2*i-1 for i=1:norb]
+	#gf_flav = [1,3,5,7]
 
 	pModel = ModelParameters(norb=norb)
-	pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_orbs=gf_orbs)
+	pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
 	pFreq = FrequencyMeshes(nw=501,
 	                        wmin=-8.0, wmax=8.0,
 					 			   iwmax=80.0,
 								   beta=pSimulation.beta)
 
-	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=60, nevalsTotalMax=150)
+	pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=400, nevalsTotalMax=5000)
 
 	println( "We have $(pModel.norb) Orbitals, #$(pModel.Nstates) states and $(pModel.Nmax) max. number of electrons" )
 	
@@ -57,12 +57,14 @@ function example_run()
 	printEvalInfo(evallist,eveclist,allstates)
 
 	println("Determining overlaps between eigenvectors...")
-	overlaps,possibleTransitions = getPossibleTransitions(evallist,eveclist,allstates,pNumerics)
-	writePossibleTransitions("possibleTransitions.dat",overlaps)
+	NSperm = getNSperm(evallist)                  # get permutation which sorts the Evals for N,S,E and use this for overlap and the GF to be consistent
+	overlaps1pGF,possibTransitions1pGF = getPossibleTransitions(evallist,eveclist,allstates,pSimulation.gf_flav,NSperm,pNumerics)
+	#writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
 	
 	println("Create interacting single-particle Green's function...")
-	gf_w, gf_iw, evalContributions = getGF(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
-	
+	#gf_w, gf_iw, evalContributions = getGFold(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+	gf_w, gf_iw, evalContributions = getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
+
 	sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
 	sigma_iw   = getSigma(gf0_iw,gf_iw)
 	
@@ -74,7 +76,7 @@ function example_run()
 	writeEvalContributions("evalContributions.dat", evalContributions)
 
 #	println("Create interacting two-particle Green's function...")
-#	gf2part,evalContributions = getGF2part(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+#	gf2part,evalContributions = getGF2part(evallist,eveclist,allstates,NSperm,pModel,pSimulation,pFreq,pNumerics)
 #	writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
 #	writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
 #	writeEvalContributions("eval2partContributions.dat", evalContributions)

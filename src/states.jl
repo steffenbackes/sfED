@@ -81,11 +81,11 @@ end
 
 
 #######################################################################
-# Return permutation that sorts the eigenvalue/vector array according to N,S quantum numbers (increasing order)
+# Return permutation that sorts the eigenvalue/vector array according to N,S quantum numbers (increasing order), then energy
 function getNSperm(evallist::Array{Array{Eigenvalue,1},1})
 	NS=[]
 	for i=1:length(evallist)
-		push!(NS, [evallist[i][2],evallist[i][3]] )   # extract the n,s quantum number into an array
+		push!(NS, [evallist[i][2],evallist[i][3],evallist[i][1]] )   # extract the n,s,E quantum number into an array
 	end
 	return sortperm(NS)
 end

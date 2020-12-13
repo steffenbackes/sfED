@@ -31,11 +31,11 @@ struct SimulationParameters
 	t      ::Float64        # hopping parameter (positive)
 	mu     ::Float64        # chemical potential
 	beta   ::Float64        # inverse temperature
-	gf_orbs::Array{Int64,1} # orbitals for which the Green's function is calculated (full matrix norb x norb)
+	gf_flav::Array{Int64,1} # flavors (orb/spin) for which the Green's function is calculated (full matrix flav x flav)
 	
 	# Constructor
-	SimulationParameters(;U,J,t,mu,beta,gf_orbs) = new(U,J,U-2*J,t,mu,beta,gf_orbs)
-	SimulationParameters(;U,Up,J,t,mu,beta,gf_orbs) = new(U,Up,J,t,mu,beta,gf_orbs)
+	SimulationParameters(;U,J,t,mu,beta,gf_flav) = new(U,J,U-2*J,t,mu,beta,gf_flav)
+	SimulationParameters(;U,Up,J,t,mu,beta,gf_flav) = new(U,Up,J,t,mu,beta,gf_flav)
 end
 
 struct NumericalParameters

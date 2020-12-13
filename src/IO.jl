@@ -213,22 +213,40 @@ end
 ####################################################################################
 
 """
-    writePossibleTransitions(filename,overlaps)
+    writeTransitionsOverlaps(filename,overlaps)
 
 Write out the overlap elements between all Eigenstates acting on c/c^dagger
 """
-function writePossibleTransitions(filename::String,overlaps::Array{Float32,2} )
-	nstates = size(overlaps)[1]
+function writeTransitionsOverlaps(filename::String,overlaps::Array{Complex{Float32},3} )
+	nstates = size(overlaps)[2]
 	open(filename, "w") do outf
 		for n1 in 1:nstates
 			for n2 in 1:nstates
-				@printf(outf, "%i  %i  %.7E \n", n1,n2,  overlaps[n1,n2])
-				@printf(outf, "%i  %i  %.7E \n", n1,n2+1,overlaps[n1,n2])
+				@printf(outf, "%i  %i  ", n1,n2)
+				for val in overlaps[:,n1,n2]
+					@printf(outf, "%.7E ", abs(val))
+				end
+				@printf(outf, "\n")
+
+				@printf(outf, "%i  %i  ", n1,n2+1)
+				for val in overlaps[:,n1,n2]
+					@printf(outf, "%.7E ", abs(val))
+				end
+				@printf(outf, "\n")
 			end # n2
 			@printf(outf,"\n")
 			for n2 in 1:nstates
-				@printf(outf, "%i  %i  %.7E \n", n1+1,n2,  overlaps[n1,n2])
-				@printf(outf, "%i  %i  %.7E \n", n1+1,n2+1,overlaps[n1,n2])
+				@printf(outf, "%i  %i  ", n1+1,n2)
+				for val in overlaps[:,n1,n2]
+					@printf(outf, "%.7E ", abs(val))
+				end
+				@printf(outf, "\n")
+
+				@printf(outf, "%i  %i  ", n1+1,n2+1)
+				for val in overlaps[:,n1,n2]
+					@printf(outf, "%.7E ", abs(val))
+				end
+				@printf(outf, "\n")
 			end # n2
 			@printf(outf,"\n")
 		end # n1
