@@ -1,8 +1,6 @@
-include("../src/params.jl")
-include("../src/states.jl")
 using SparseArrays
 
 @testset "basic properties" begin
-    @test typeof(noSpinConfig(1,1)) === Int64   
-    @test noSpinConfig(1,1) == 1   
+    @test typeof(sfED.noSpinConfig(1,UInt64(1))) === UInt64   
+    @test sfED.noSpinConfig(1,UInt64(1)) == UInt64(1)
 end

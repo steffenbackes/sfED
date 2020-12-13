@@ -1,4 +1,8 @@
 module sfED
+__precompile__(false)
+
+export example_run, noSpinConfig
+
 using Arpack
 using LinearAlgebra
 using SparseArrays

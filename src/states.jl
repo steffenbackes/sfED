@@ -1,10 +1,10 @@
-
 """
     noSpinConfig(n, Nmax)
 
 Number of configurations with different total spin S possible for given `n` and `Nmax`.
 """
-noSpinConfig(n::Int, Nmax::UInt32)::UInt64 = round(UInt64,  Nmax/2-abs(n-Nmax/2)+1 )
+noSpinConfig(n::Int, Nmax::UInt64)::UInt64 = round(UInt64,  Nmax/2-abs(n-Nmax/2)+1 )
+noSpinConfig(n::Int, Nmax::Int64)::UInt64  = noSpinConfig(n, UInt64(Nmax))
 
 """
     spinConfig(i,n,Nmax)
@@ -12,14 +12,14 @@ noSpinConfig(n::Int, Nmax::UInt32)::UInt64 = round(UInt64,  Nmax/2-abs(n-Nmax/2)
 `i`-th possible total spin value S for given `n`, `nMax`. i starts at 1 (eg S=-2,0,2) 
 Our electrons have spin +- 1 !!!!!!!!!!!!!!!!!!!
 """
-spinConfig(i::UInt64,n::Int,Nmax::UInt32)::Int64 = round(Int64, -(Nmax/2-abs(n-Nmax/2)) + (i-1)*2 )
+spinConfig(i::UInt64,n::Int,Nmax::UInt64)::Int64 = round(Int64, -(Nmax/2-abs(n-Nmax/2)) + (i-1)*2 )
 
 """
     indexSpinConfig(S,n,Nmax)
 
 Index `i` corresponding to a spin config S for given n,nMax
 """
-indexSpinConfig(S::Int,n::Int,Nmax::UInt32)::UInt64 = round(UInt64,  (S + (Nmax/2-abs(n-Nmax/2)))/2 + 1 )
+indexSpinConfig(S::Int,n::Int,Nmax::UInt64)::UInt64 = round(UInt64,  (S + (Nmax/2-abs(n-Nmax/2)))/2 + 1 )
 
 
 """
@@ -42,7 +42,7 @@ getCsign(i::Int64,state::Fockstate) = (-1)^sum(state[1:i-1])
 
 return the maximum number of electrons possible determined from the allstates array
 """
-getNmaxFromAllstates(allstates::NSstates) = UInt32(size(allstates)[1]-1)
+getNmaxFromAllstates(allstates::NSstates) = UInt64(size(allstates)[1]-1)
 
 ########################################################################
 

@@ -115,7 +115,7 @@ function getGFold( evallist::Array{Array{Eigenvalue,1},1},
 					pNumerics::NumericalParameters)::Tuple{SingleParticleFunction,SingleParticleFunction,Array{Array{Float64,1},1}}
 
 	norb=length(pSimulation.gf_flav)
-	Nmax=UInt32(pModel.Nmax)
+	Nmax=UInt64(pModel.Nmax)
 	beta = pSimulation.beta
 
 	NSvalues   = Int64[-1,-1,-1,-1]
@@ -252,7 +252,7 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
 					pNumerics::NumericalParameters)::Tuple{SingleParticleFunction,SingleParticleFunction,Array{Array{Float64,1},1}}
 
 	nflav=length(pSimulation.gf_flav)
-	Nmax=UInt32(pModel.Nmax)
+	Nmax=UInt64(pModel.Nmax)
 	beta = pSimulation.beta
 
 	gfdiagnorm                    = zeros(Float64,nflav)                   # check normalization of GF
@@ -263,14 +263,17 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
 
 	E0 = minimum( first.(evallist) )
 
+    evalContributions = Array{Float64,2}(undef, length(evallist), 4)
 	# prefill evalContribution array
 	for n1=1:length(evallist)
 		E1    = evallist[NSperm[n1]][1] -E0 
 		N1    = round(Int64,evallist[NSperm[n1]][2])
 		s1    = round(UInt64,evallist[NSperm[n1]][3])
 		S1    = spinConfig(s1,N1,Nmax)
-		push!( evalContributions, [N1,S1,E1,0.0] )
+		#push!( evalContributions, [N1,S1,E1,0.0] )
+        evalContributions[n1, :] .= [E1, N1, s1, S1]
 	end
+
 
 	for n1=1:length(evallist)
 	    if n1%(round(Int64,length(evallist)/10)) == 0
@@ -306,8 +309,8 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
 							ovrlp = overlaps[2*a-0,n1,n2]*overlaps[2*b-1,n2,n1]            # <n1|c_a|n2> * <n2|cdag_b|n1>
 							gf_w[a,b,:]  += ovrlp ./ ( pFreq.wf     .+ (pNumerics.delta*im + E1 - E2) )
 							gf_iw[a,b,:] += ovrlp ./ ( im*pFreq.iwf .+ (                   + E1 - E2) )
-							evalContributions[n1][4] += abs(ovrlp)
-							evalContributions[n2][4] += abs(ovrlp)
+							evalContributions[n1,4] += abs(ovrlp)
+							evalContributions[n2,4] += abs(ovrlp)
 							if a==b
 								gfdiagnorm[a] += real(ovrlp)
 							end
@@ -378,7 +381,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 
 	# we restrict this calculation to one orbital !
 	#norb=1
-	Nmax=UInt32(pModel.Nmax)
+	Nmax=UInt64(pModel.Nmax)
 	beta = pSimulation.beta
 	nw = 5
 	println("Generating the two-particle GF on ",nw,"^3 frequencies...")

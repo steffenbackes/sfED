@@ -8,3 +8,7 @@ end
 @testset "states" begin
     include("states.jl")
 end
+
+@testset "params" begin
+    include("params.jl") 
+end

@@ -16,8 +16,8 @@ const SingleParticleFunction = Array{Complex{Float32},3}
 const TwoParticleFunction = Array{Complex{Float32},3}  # single orbital for now, depends on 3 frequencies
 
 struct ModelParameters
-	norb   ::UInt32    # Number of Orbitals
-	Nmax   ::UInt32    # Maximal number of electrons=2*norb
+	norb   ::UInt64    # Number of Orbitals
+	Nmax   ::UInt64    # Maximal number of electrons=2*norb
 	Nstates::UInt64     # Total number of possible Fock states=4^norb  (0,up,dn,updn for each state)
 
 	#Constructor
