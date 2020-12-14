@@ -16,7 +16,7 @@ include("IO.jl")
 include("greensfunction.jl")
 
 function example_run()
-   norb = 4
+   norb = 6
    U = 3.0
    J = 0.3
    Up = U-2*J
@@ -66,11 +66,14 @@ function example_run()
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
 
    println("Create interacting single-particle Green's function...")
-  # gf_w, gf_iw, evalContributions = getGFnonoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
-  # gf_w, gf_iw, evalContributions = getGFhalfoptim(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
-   gf_w, gf_iw, evalContributions = getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
-
-   exit()
+#   gf_w, gf_iw, evalContributions = getGFnonoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+#   gf_w, gf_iw, evalContributions = @time getGFnonoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+   gf_w, gf_iw, evalContributions = getGFNSoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+#   gf_w, gf_iw, evalContributions = @time getGFNSoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+#   gf_w, gf_iw, evalContributions = getGFhalfoptim(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
+#   gf_w, gf_iw, evalContributions = @time getGFhalfoptim(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
+#   gf_w, gf_iw, evalContributions = getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
+#   gf_w, gf_iw, evalContributions = @time getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
 
    sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = getSigma(gf0_iw,gf_iw)
