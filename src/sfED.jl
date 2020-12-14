@@ -66,8 +66,8 @@ function example_run()
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
    
    println("Create interacting single-particle Green's function...")
-   gf_w, gf_iw, evalContributions = getGFold(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
-   #gf_w, gf_iw, evalContributions = getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
+   #gf_w, gf_iw, evalContributions = getGFold(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+   gf_w, gf_iw, evalContributions = getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
 
    sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = getSigma(gf0_iw,gf_iw)

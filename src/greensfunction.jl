@@ -304,9 +304,9 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
    
             if ( expFac > pNumerics.cutoff )
                for b=a:length(pSimulation.gf_flav) # only upper triangular part
-                  if (abs(overlaps[2*b-1,n2,n1])>pNumerics.cutoff)
+                  if (abs(expFac*overlaps[2*b-1,n2,n1])>pNumerics.cutoff)
 
-                     ovrlp = overlaps[2*a-0,n1,n2]*overlaps[2*b-1,n2,n1]            # <n1|c_a|n2> * <n2|cdag_b|n1>
+                     ovrlp = expFac*overlaps[2*a-0,n1,n2]*overlaps[2*b-1,n2,n1]            # <n1|c_a|n2> * <n2|cdag_b|n1>
                      gf_w[a,b,:]  += ovrlp ./ ( pFreq.wf     .+ (pNumerics.delta*im + E1 - E2) )
                      gf_iw[a,b,:] += ovrlp ./ ( im*pFreq.iwf .+ (                   + E1 - E2) )
                      evalContributions[n1,4] += abs(ovrlp)
