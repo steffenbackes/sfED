@@ -12,3 +12,7 @@ end
 @testset "params" begin
     include("params.jl") 
 end
+
+@testset "sfED_productiontests" begin
+   include("sfED_productiontests.jl")
+end
