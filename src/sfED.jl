@@ -1,7 +1,7 @@
-#module sfED
-#__precompile__(false)
+module sfED
+__precompile__(false)
 
-#export example_run, noSpinConfig
+export example_run, noSpinConfig
 
 using Arpack
 using LinearAlgebra
@@ -89,5 +89,5 @@ function example_run()
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
 
    end # end example function
-#end
-example_run()
+end
+#example_run()
