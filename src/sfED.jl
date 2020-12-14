@@ -1,7 +1,7 @@
-module sfED
-__precompile__(false)
+#module sfED
+#__precompile__(false)
 
-export example_run, noSpinConfig
+#export example_run, noSpinConfig
 
 using Arpack
 using LinearAlgebra
@@ -24,7 +24,7 @@ function example_run()
    mu = (U+Up+Up-J)/2      # half filling
    beta = 40.0
    #gf_flav = [2*i-1 for i=1:norb]
-   gf_flav = [1]
+   gf_flav = [1,3]
 
    pModel = ModelParameters(norb=norb)
    pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
@@ -64,10 +64,13 @@ function example_run()
    NSperm = getNSperm(evallist)                  # get permutation which sorts the Evals for N,S,E and use this for overlap and the GF to be consistent
    overlaps1pGF,possibTransitions1pGF = getPossibleTransitions(evallist,eveclist,allstates,pSimulation.gf_flav,NSperm,pNumerics)
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
-   
+
    println("Create interacting single-particle Green's function...")
-   #gf_w, gf_iw, evalContributions = getGFold(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+  # gf_w, gf_iw, evalContributions = getGFnonoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
+  # gf_w, gf_iw, evalContributions = getGFhalfoptim(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
    gf_w, gf_iw, evalContributions = getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
+
+   exit()
 
    sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = getSigma(gf0_iw,gf_iw)
@@ -86,5 +89,5 @@ function example_run()
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
 
    end # end example function
-end
-#example_run()
+#end
+example_run()

@@ -106,7 +106,7 @@ Evaluation of the Lehmann representation for the interacting finite-temperature 
 We sum over all Eigenstates `evallist` with electron number N and all other eigenstates n2 with electron number N-1
 Since we have spin degeneracy, we only calculate the up GF, so we annihilate one up spin, so we also only sum over all S-1 states for given S(n1)
 """
-function getGFold( evallist::Array{Array{Eigenvalue,1},1},
+function getGFnonoptim( evallist::Array{Array{Eigenvalue,1},1},
                 eveclist::Array{Eigenvector,1},
                allstates::NSstates,
                pModel::ModelParameters,
@@ -243,7 +243,7 @@ Evaluation of the Lehmann representation for the interacting finite-temperature 
 We sum over all Eigenstates `evallist` with electron number N and all other eigenstates n2 with electron number N-1
 Since we have spin degeneracy, we only calculate the up GF, so we annihilate one up spin, so we also only sum over all S-1 states for given S(n1)
 """
-function getGF( evallist::Array{Array{Eigenvalue,1},1},
+function getGFhalfoptim( evallist::Array{Array{Eigenvalue,1},1},
                overlaps::Array{Complex{Float32},3},
                possibleTransitions::Array{Array{Array{Int64,1},1},1}, 
                NSperm::Array{Int64,1},
@@ -322,6 +322,132 @@ function getGF( evallist::Array{Array{Eigenvalue,1},1},
          end # n2 loop
       end # a loop
    end # n1 loop
+    println("\rdone!")
+   
+   # copy the offdiagonals (not true copy in julia, just referencing but this is ok)
+   for m1=1:nflav
+      for m2=m1+1:nflav
+         gf_w[m2,m1,:] = gf_w[m1,m2,:]
+         gf_iw[m2,m1,:] = gf_iw[m1,m2,:]
+      end
+   end
+   
+   #normalize
+   gfdiagnorm ./= getZ(evallist,beta)
+   gf_w ./= getZ(evallist,beta)
+   gf_iw ./= getZ(evallist,beta)
+
+   # normalize the Matsubara GF tail so that the Dyson equation works for the Selfenergy when the normalization is slightly too small
+#   for m1=1:nflav
+#      gf_iw[m1,m1,:] ./= gfdiagnorm[m1]
+#   end
+
+   printGFnorm(gfdiagnorm, maximum( first.(evallist) )-E0)
+
+   return gf_w, gf_iw, evalContributions
+end 
+#########################################################################################
+"""
+    getGF(evallist, eveclist, allstates, pModel, pSimulation, pFreq, pNumerics)
+
+Evaluation of the Lehmann representation for the interacting finite-temperature Green's function
+We sum over all Eigenstates `evallist` with electron number N and all other eigenstates n2 with electron number N-1
+Since we have spin degeneracy, we only calculate the up GF, so we annihilate one up spin, so we also only sum over all S-1 states for given S(n1)
+"""
+function getGF( evallist::Array{Array{Eigenvalue,1},1},
+               overlaps::Array{Complex{Float32},3},
+               possibleTransitions::Array{Array{Array{Int64,1},1},1}, 
+               NSperm::Array{Int64,1},
+               pModel::ModelParameters,
+               pSimulation::SimulationParameters,
+               pFreq::FrequencyMeshes,
+               pNumerics::NumericalParameters)::Tuple{SingleParticleFunction,SingleParticleFunction,Array{Float64,2}}
+
+   nflav=length(pSimulation.gf_flav)
+   Nmax=pModel.Nmax
+   beta = pSimulation.beta
+
+   gfdiagnorm                    = zeros(Float64,nflav)                   # check normalization of GF
+   gf_w::SingleParticleFunction  = zeros(nflav,nflav,length(pFreq.wf))
+   gf_iw::SingleParticleFunction = zeros(nflav,nflav,length(pFreq.iwf))
+
+   #evalContributions::Array{Array{Float64,1},1} = []
+
+   E0 = minimum( first.(evallist) )
+   evalContributions = Array{Float64}(undef, (length(evallist), 4) )
+
+   # prefill evalContribution array
+   for n1=1:length(evallist)
+      E1    = evallist[NSperm[n1]][1] -E0 
+      N1    = round(Int64,evallist[NSperm[n1]][2])
+      s1    = round(Int64,evallist[NSperm[n1]][3])
+      S1    = spinConfig(s1,N1,Nmax)
+      #push!( evalContributions, [N1,S1,E1,0.0] )
+      evalContributions[n1, :] .= [N1,S1,E1,0.0]
+   end
+
+
+   # now we loop over the flavors
+   # GF is defined as in the pdf docu:
+   # <n1| c_a |n2><n2| cdag_b |n1>
+   for a=1:length(pSimulation.gf_flav)
+      for b=a:length(pSimulation.gf_flav) # only upper triangular part
+
+         # first count how many transitions we have
+         nopairs = 0
+         for i=1:length(possibleTransitions[2*a-1])
+            n2set = intersect( possibleTransitions[2*a-1][i],possibleTransitions[2*b-1][i] )
+            Ei = evallist[NSperm[i]][1] -E0
+            for j in n2set
+               Ej = evallist[NSperm[j]][1] -E0
+               if exp(-beta*Ei)+exp(-beta*Ej) > pNumerics.cutoff
+                  nopairs += 1
+               end
+            end
+         end
+
+         nmpairs = zeros(Int64,nopairs,2)
+         ii = 1
+         for i=1:length(possibleTransitions[2*a-1])
+            n2set = intersect( possibleTransitions[2*a-1][i],possibleTransitions[2*b-1][i] )
+            Ei = evallist[NSperm[i]][1] -E0
+            for j in n2set
+               Ej = evallist[NSperm[j]][1] -E0
+               if exp(-beta*Ei)+exp(-beta*Ej) > pNumerics.cutoff
+                  nmpairs[ii,:] = [i,j]
+                  ii += 1
+               end
+            end
+         end
+
+         for i=1:nopairs
+            n = nmpairs[i,1]
+            m = nmpairs[i,2]
+
+            E1    = evallist[NSperm[n]][1] -E0     # shift by E0 to avoid overflow
+            N1    = round(Int64,evallist[NSperm[n]][2])
+            s1    = round(Int64,evallist[NSperm[n]][3])
+            S1    = spinConfig(s1,N1,Nmax)
+   
+            E2    = evallist[NSperm[m]][1] -E0
+            N2    = round(Int64,evallist[NSperm[m]][2])   
+            s2    = round(Int64,evallist[NSperm[m]][3])
+            S2    = spinConfig(s2,N2,Nmax)
+
+            # It's faster to calculate exp than to store/read it
+
+            ovrlp = (exp(-beta*E1)+exp(-beta*E2))*overlaps[2*a-0,n,m]*overlaps[2*b-1,m,n]            # <n1|c_a|n2> * <n2|cdag_b|n1>
+            gf_w[a,b,:]  += ovrlp ./ ( pFreq.wf     .+ (pNumerics.delta*im + E1 - E2) )
+            gf_iw[a,b,:] += ovrlp ./ ( im*pFreq.iwf .+ (                   + E1 - E2) )
+            evalContributions[n,4] += abs(ovrlp)
+            evalContributions[m,4] += abs(ovrlp)
+            if a==b
+               gfdiagnorm[a] += real(ovrlp)
+            end
+
+         end # n,m loop
+      end # b loop
+   end # a loop
     println("\rdone!")
    
    # copy the offdiagonals (not true copy in julia, just referencing but this is ok)
@@ -760,6 +886,8 @@ function getPossibleTransitions(evallist::Array{Array{Eigenvalue,1},1},
    #upflavors = filter(x->isodd(x), flavors) # 1,3,5, ... are up spins
    #dnflavors = filter(x->iseven(x), flavors) # 2,4,6, ... are dn spins
 
+   #maxNoTransitions = length( allstates[Nmax/2][(noSpinConfig(Nmax/2,Nmax)+1)/2 ] )
+   #possibleTransitionsTmp = zeros(Int64, flavors*2, nstates, maxNoTransitions)
    possibleTransitions = [ [ Int64[] for i=1:nstates] for a=1:nflavors*2 ] # TODO: Array like ['crea','up',m]?
    overlaps = zeros(Complex{Float32},nflavors*2,nstates,nstates)
    # we always calculate crea and anni overlap for each flavor, i.e. norb*2 
