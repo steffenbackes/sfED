@@ -32,11 +32,9 @@ struct SimulationParameters
    mu     ::Float64        # chemical potential
    beta   ::Float64        # inverse temperature
    gf_flav::Array{Int64,1} # flavors (orb/spin) for which the Green's function is calculated (full matrix flav x flav)
-   
-   # Constructor
-   SimulationParameters(;U,J,t,mu,beta,gf_flav) = new(U,J,U-2*J,t,mu,beta,gf_flav)
-   SimulationParameters(;U,Up,J,t,mu,beta,gf_flav) = new(U,J,Up,t,mu,beta,gf_flav)
 end
+
+SimulationParameters(;U,J,Up=U-2*J,t,mu,beta,gf_flav) = SimulationParameters(U,J,Up,t,mu,beta,gf_flav)
 
 struct NumericalParameters
    delta            ::Float64   # broadening parameter, we work above the real axis at w+im*delta
@@ -46,7 +44,7 @@ struct NumericalParameters
 
    NumericalParameters(;delta,cutoff,nevalsPerSubspace,nevalsTotalMax) = (nevalsTotalMax>0 && nevalsPerSubspace>0) ? 
                                                new(delta,cutoff,nevalsPerSubspace,nevalsTotalMax) :
-                                               throw(ArgumentError("nevalsPerSubspace=$nevalsPerSubspace, nevalsTotalMax=$nevalsTotalMax < have to be larger than 0"))
+                                               throw(DomainError((nevalsPerSubspace, nevalsTotalMax),"nevalsPerSubspace=$nevalsPerSubspace, nevalsTotalMax=$nevalsTotalMax have to be larger than 0"))
 end
 
 # Outer Constructor for FrequencyMeshes

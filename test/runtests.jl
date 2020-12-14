@@ -1,4 +1,4 @@
-using sfED
+import sfED
 using Test
 
 @testset "Example Tests" begin

@@ -1,39 +1,64 @@
+
+# ======================= Auxilliary Function =======================
+
+function _nnmax(n::Int64, Nmax::Int64)::Int64
+   n >= 0 || throw(DomainError(n, "argument n must be nonnegative")) 
+   Nmax >= 0 || throw(DomainError(Nmax, "argument Nmax must be nonnegative")) 
+   n <= Nmax || throw(DomainError(n-Nmax, "n must be smaller than Nmax")) 
+   return Nmax/2-abs(n-Nmax/2)
+end
+
+# ========================= Main Functions =========================
+
 """
     noSpinConfig(n, Nmax)
 
 Number of configurations with different total spin S possible for given `n` and `Nmax`.
+
+# Examples
+```
+julia> sfED.noSpinConfig(2,4)
+3
+```
 """
 function noSpinConfig(n::Int64, Nmax::Int64)::Int64
-   @assert n>=0
-   @assert Nmax>=0
-   @assert n<=Nmax
-   return round(Int64,  Nmax/2-abs(n-Nmax/2)+1 )
+    return round(Int64, _nnmax(n,Nmax)+1 )
 end
 
 """
     spinConfig(i,n,Nmax)
 
-`i`-th possible total spin value S for given `n`, `nMax`. i starts at 1 (eg S=-2,0,2) 
-Our electrons have spin +- 1 !!!!!!!!!!!!!!!!!!!
+`i`-th possible total spin value S for given `n`, `nMax`. `i` starts at 1
+
+# Examples
+```
+julia> sfED.spinConfig(1,2,4)
+-2
+julia> sfED.spinConfig(2,2,4)
+0
+julia> sfED.spinConfig(3,2,4)
+2
+```
 """
 function spinConfig(i::Int64,n::Int64,Nmax::Int64)::Int64
-   @assert i>0
-   @assert n>=0
-   @assert Nmax>=0
-   @assert i<=noSpinConfig(n,Nmax)
-   return round(Int64, -(Nmax/2-abs(n-Nmax/2)) + (i-1)*2 )
+   nTot = noSpinConfig(n,Nmax)
+   (i > 0 && i <= nTot) || throw(DomainError(nTot-i, "i must be larger than zero and "*
+                                             "smaller than the number of spin configurations.")) 
+   return round(Int64, -(_nnmax(n,Nmax)) + (i-1)*2 )
 end
 
 """
     indexSpinConfig(S,n,Nmax)
 
-Index `i` corresponding to a spin config S for given n,nMax
+Index `i` corresponding to a spin config `S` for given `n` and `nMax`
+
+# Example
+```
+julia> indexSpinConfig(spinConfig(2,2,4),2,4)
+2
+```
 """
-function indexSpinConfig(S::Int64,n::Int64,Nmax::Int64)::Int64
-   @assert n>=0
-   @assert Nmax>=0
-   return round(Int64,  (S + (Nmax/2-abs(n-Nmax/2)))/2 + 1 )
-end
+indexSpinConfig(S::Int64,n::Int64,Nmax::Int64)::Int64 = round(Int64,  (S + (_nnmax(n,Nmax)))/2 + 1)
 
 
 """
@@ -47,9 +72,10 @@ total spin `S` of `state`.
 """
     getCsign(i,state)
 
-return the sign when creating/annihilating an electron at position i in state.
+return the sign when creating/annihilating an electron at position `i` in `state`.
 """
 @inline getCsign(i::Int64,state::Fockstate) = 1-2*(sum(state[1:i-1])%2)
+
 
 """
     getNmaxFromAllstates(allstates)
