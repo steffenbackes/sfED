@@ -13,6 +13,10 @@ end
     include("params.jl") 
 end
 
+@testset "IO" begin
+   include("IO.jl")
+end
+
 @testset "sfED_productiontests" begin
    include("sfED_productiontests.jl")
 end

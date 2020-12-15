@@ -52,13 +52,13 @@ function example_run()
    writeGF("gf0_iw.dat",gf0_iw, pFreq.iwf )
    
    allstates = generateStates(pModel)                                          # generate all Fock states as arrays
-   #printStateInfo(allstates)
+   #writeStateInfo(allstates)
    
    evallist,eveclist = getEvalveclist(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,allstates,pNumerics)   # Setup Hamiltonian and solve it
    
    println("Groundstate energy E0=", minimum( first.(evallist) )  )
    println("Partition function Z=",getZ(evallist,pSimulation.beta) )
-   printEvalInfo(evallist,eveclist,allstates)
+   writeEvalInfo(evallist,eveclist,allstates)
 
    println("Determining overlaps between eigenvectors...")
    NSperm = getNSperm(evallist)                  # get permutation which sorts the Evals for N,S,E and use this for overlap and the GF to be consistent
