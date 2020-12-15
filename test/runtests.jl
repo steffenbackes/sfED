@@ -13,6 +13,7 @@ end
     include("params.jl") 
 end
 
-@testset "sfED_productiontests" begin
-   include("sfED_productiontests.jl")
+@testset "example_calculations" begin
+   include("example4orbDimer.jl")
+   include("example6orbTrimer.jl")
 end
