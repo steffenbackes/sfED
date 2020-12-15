@@ -1,4 +1,4 @@
-using sfED
+import sfED
 using Test
 
 @testset "Example Tests" begin
@@ -11,6 +11,10 @@ end
 
 @testset "params" begin
     include("params.jl") 
+end
+
+@testset "IO" begin
+   include("IO.jl")
 end
 
 @testset "example_calculations" begin

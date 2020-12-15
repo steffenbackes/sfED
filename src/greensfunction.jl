@@ -229,7 +229,7 @@ function getGFnonoptim( evallist::Array{Array{Eigenvalue,1},1},
       gf_iw[m1,m1,:] ./= gfdiagnorm[m1]
    end
 
-   printGFnorm(gfdiagnorm, maximum( first.(evallist) )-E0)
+   writeGFnorm(gfdiagnorm, maximum( first.(evallist) )-E0)
 
    return gf_w, gf_iw, evalContributions
 end 
@@ -506,7 +506,7 @@ function getGFhalfoptim( evallist::Array{Array{Eigenvalue,1},1},
 #      gf_iw[m1,m1,:] ./= gfdiagnorm[m1]
 #   end
 
-   printGFnorm(gfdiagnorm, maximum( first.(evallist) )-E0)
+   writeGFnorm(gfdiagnorm, maximum( first.(evallist) )-E0)
 
    return gf_w, gf_iw, evalContributions
 end 
