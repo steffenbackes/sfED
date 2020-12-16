@@ -15,8 +15,13 @@ function getG0(        eps::Array{Float64,1},
    # Since the flavors can be up/dn, we need to blow up the tmatrix, which is only defined for orbitals, to spin/orbital space
    norb = size(tmatrix)[1]
    tmatspin = zeros(2*norb,2*norb)
-   tmatspin[1:norb,1:norb] = tmatrix
-   tmatspin[norb+1:end,norb+1:end] = tmatrix
+   for m1=0:norb-1
+      for m2=0:norb-1
+         for s=0:1
+            tmatspin[2*m1+s+1,2*m2+s+1] = tmatrix[m1+1,m2+1]
+         end
+      end
+   end
    for n=1:nw
       gf0[:,:,n] = inv( I*(w[n] + pSimulation.mu) - Diagonal(eps[pSimulation.gf_flav]) - tmatspin[pSimulation.gf_flav,pSimulation.gf_flav] ) 
    end
