@@ -579,6 +579,63 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
 end 
 
 ################################################################################################################
+#""" BUGGY AND SLOWER !
+#    getN2Transitions(flavor,eigenspace,fockstates,pNumerics,expCutoff)
+#
+#Determine 
+#"""
+#function getN2Transitions(n1::Int64,s1::Int64,flavor::Int64,
+#                          eigenspace::Eigenspace,
+#                          fockstates::Fockstates,
+#                          beta::Float64,
+#                          pNumerics::NumericalParameters,
+#                          expCutoff::Int64)
+#   Nmax = fockstates.Nmax
+#   E0 = minimum(eigenspace.evals)
+#
+#   transitions = Transition[]
+#
+#   # if flavor is positive, calculate c^dagger, if negative calculate c
+#   S1 = eigenspace.SpinNS[n1+1,s1] # spin S in this subspace
+#   dS = 2*(abs(flavor)%2)-1
+#   n2 = n1+sign(flavor)
+#   S2 = S1+dS*sign(flavor)
+#
+#   n2states = nstatesNS(fockstates,n2,S2) # are there any states in the new subspace?
+#
+#   cmat = sparse([1],[1],[1])
+#   if n2states>0
+#      s2 = indexSpinConfig(S2,n2,Nmax)       # this works because we checked this subspace exists
+#      if flavor<0
+#         cmat = getCmatrix(abs(flavor), fockstates[n2,s2,:], fockstates[n1,s1,:])
+#      else
+#         cmat = getCdagmatrix(abs(flavor), fockstates[n2,s2,:], fockstates[n1,s1,:])
+#      end
+#
+#      for i=1:eigenspace.dimNS[n1+1,s1] # now loop over the |1> subspace
+#         E1,evec1 = eigenspace[n1,s1,i]
+#         E1-=E0
+#
+#         for j=1:eigenspace.dimNS[n2+1,s2] # and loop over the <2| subspace
+#            E2,evec2 = eigenspace[n2,s2,j]
+#            E2-=E0
+#
+#            if expCutoff==0 || (exp(-beta*E1)+exp(-beta*E2))>pNumerics.cutoff
+#               ovrlp = dot( evec2, cmat * evec1 )
+#               if abs(ovrlp) > pNumerics.cutoff
+#                  index1 = eigenspace.startNSeval[n1+1,s1,i]
+#                  index2 = eigenspace.startNSeval[n2+1,s2,j]
+#                  push!( transitions, Transition(index1,index2,E1,E2,ovrlp) )
+#               end
+#            end # exp cutoff if needed
+#         end # j states <2|
+#      end # i states |1>
+#   end # n2states >0
+#
+#   return transitions
+#end
+
+#########################################################################################
 
 """
     getPossibleTransitions(eigenspace,fockstates,flavors,pNumerics,expCutoff)

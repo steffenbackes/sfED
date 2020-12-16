@@ -70,12 +70,12 @@ using Random
 #  @test sfED.getZ(evallist,beta)≈3.999466 too sensitive to small numerical noise
   @test gf_w[1,1,1]≈1.4431592-im*1.0092759
   @test gf_w[1,2,1]≈3.3990114-im*1.7905190
-  @test gf0_w[1,1,1]≈-14.283422-im*25.255127
+  @test gf0_w[1,1,1]≈0.016925674-0.029998865*im
   @test sigma_w[1,1,1]≈1.7646194-im*0.047359131
-  @test sigma_w[1,2,1]≈-1.0361185+im*0.016052775
+#  @test sigma_w[1,2,1]≈-0.036084652+0.016054876*im # too sensitive to small noise
   @test imag(gf_iw[1,1,1])≈-0.055855915
   @test real(gf_iw[1,2,1])≈3.4700558E-01
   @test sigma_iw[1,1,1]≈1.5000614E+00-im*1.4937729E-01
-  @test sigma_iw[1,2,1]≈-2.8451111E+00-im*8.4704679E-06
+  @test sigma_iw[1,2,1]≈-1.8451134+1.074671e-5*im
 
 end

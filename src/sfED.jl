@@ -23,7 +23,8 @@ function example_run()
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
    beta = 40.0
-   gf_flav = [1]
+   #gf_flav = [1]
+   gf_flav = [2*m-1 for m in 1:norb]
 
    pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
    pFreq = FrequencyMeshes(nw=501,
