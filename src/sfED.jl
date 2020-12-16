@@ -16,34 +16,35 @@ include("IO.jl")
 include("greensfunction.jl")
 
 function example_run()
-   norb = 6
+   norb = 4
    U = 3.0
    J = 0.3
    Up = U-2*J
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
    beta = 40.0
-   #gf_flav = [2*i-1 for i=1:norb]
-   gf_flav = [1,3]
+   gf_flav = [1,5]
 
-   pModel = ModelParameters(norb=norb)
    pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
    pFreq = FrequencyMeshes(nw=501,
                            wmin=-8.0, wmax=8.0,
                            iwmax=80.0,
                            beta=pSimulation.beta)
 
-   pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6, nevalsPerSubspace=400, nevalsTotalMax=5000)
+   pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6)
 
-   println( "We have $(pModel.norb) Orbitals, #$(pModel.Nstates) states and $(pModel.Nmax) max. number of electrons" )
+   # generate all the states
+   fockstates = Fockstates(norb=norb)
+
+   println( "We have $(fockstates.norb) Orbitals, #$(fockstates.Nstates) states and $(fockstates.Nmax) max. number of electrons" )
    
    #######################################################################
    # Main part of the Program ############################################
    #######################################################################
    
-   eps             = getEps(pNumerics,pModel)  # getEps takes a small number as argument and adds random noise to the local levels to lift degeneracies and improve numerical stability
-   tmatrix         = getTmatrix(pModel,pSimulation)
-   Umatrix,Jmatrix = getUJmatrix(pModel,pSimulation)
+   eps             = getEps(fockstates,pNumerics,)  # getEps takes a small number as argument and adds random noise to the local levels to lift degeneracies
+   tmatrix         = getTmatrix(fockstates,pSimulation)
+   Umatrix,Jmatrix = getUJmatrix(fockstates,pSimulation)
 
    println("Create noninteracting single-particle Green's function...")
    gf0_w  = getG0(eps,tmatrix,pSimulation,FrequencyMeshCplx(pFreq.wf .+ im*pNumerics.delta) )    # real frequencies
@@ -51,29 +52,20 @@ function example_run()
    writeGF("gf0_w.dat",gf0_w,pFreq.wf)
    writeGF("gf0_iw.dat",gf0_iw, pFreq.iwf )
    
-   allstates = generateStates(pModel)                                          # generate all Fock states as arrays
    #writeStateInfo(allstates)
    
-   evallist,eveclist = getEvalveclist(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,allstates,pNumerics)   # Setup Hamiltonian and solve it
+   eigenspace = Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
    
-   println("Groundstate energy E0=", minimum( first.(evallist) )  )
-   println("Partition function Z=",getZ(evallist,pSimulation.beta) )
-   writeEvalInfo(evallist,eveclist,allstates)
+   println("Groundstate energy E0=", minimum( eigenspace.evals  ) )
+   println("Partition function Z=",getZ(eigenspace.evals,pSimulation.beta) )
+   writeEvalInfo(eigenspace,fockstates)
 
    println("Determining overlaps between eigenvectors...")
-   NSperm = getNSperm(evallist)                  # get permutation which sorts the Evals for N,S,E and use this for overlap and the GF to be consistent
-   overlaps1pGF,possibTransitions1pGF = getPossibleTransitions(evallist,eveclist,allstates,pSimulation.gf_flav,NSperm,pNumerics)
+   transitions1pGF = getPossibleTransitions(eigenspace,fockstates,pSimulation.gf_flav,pSimulation.beta,pNumerics,1)   # contains list of possible transitions, E1,E2 and the overlap elements
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
-
+#
    println("Create interacting single-particle Green's function...")
-#   gf_w, gf_iw, evalContributions = getGFnonoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
-#   gf_w, gf_iw, evalContributions = @time getGFnonoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
-   gf_w, gf_iw, evalContributions = getGFNSoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
-#   gf_w, gf_iw, evalContributions = @time getGFNSoptim(evallist,eveclist,allstates,pModel,pSimulation,pFreq,pNumerics)
-#   gf_w, gf_iw, evalContributions = getGFhalfoptim(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
-#   gf_w, gf_iw, evalContributions = @time getGFhalfoptim(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
-#   gf_w, gf_iw, evalContributions = getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
-#   gf_w, gf_iw, evalContributions = @time getGF(evallist,overlaps1pGF,possibTransitions1pGF,NSperm,pModel,pSimulation,pFreq,pNumerics)
+   gf_w, gf_iw = getGF(transitions1pGF,getZ(eigenspace.evals,pSimulation.beta),pSimulation,pFreq,pNumerics)
 
    sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = getSigma(gf0_iw,gf_iw)
@@ -82,8 +74,8 @@ function example_run()
    writeGF("gf_iw.dat",   gf_iw,   pFreq.iwf)
    writeGF("sigma_w.dat", sigma_w, pFreq.wf)
    writeGF("sigma_iw.dat",sigma_iw,pFreq.iwf)
-   writeEvalContributionsSectors("evalContributionsSectors.dat", evalContributions)
-   writeEvalContributions("evalContributions.dat", evalContributions)
+#   writeEvalContributionsSectors("evalContributionsSectors.dat", evalContributions)
+#   writeEvalContributions("evalContributions.dat", evalContributions)
 
 #  println("Create interacting two-particle Green's function...")
 #  gf2part,evalContributions = getGF2part(evallist,eveclist,allstates,NSperm,pModel,pSimulation,pFreq,pNumerics)

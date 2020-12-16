@@ -100,31 +100,32 @@ end
 
 Write the Eigenvalues and some info
 """
-function writeEvalInfo(io::IO, evallist::Array{Array{Eigenvalue,1},1},
-                       eveclist::Array{Eigenvector,1},
-                       allstates::NSstates)
-   Nmax = getNmaxFromAllstates(allstates)
-   E0 = minimum(first.(evallist))
-   perm = sortperm(first.(evallist))
+function writeEvalInfo(io::IO, eigenspace::Eigenspace,
+                               fockstates::Fockstates)
+   Nmax = fockstates.Nmax
+   Nstates = eigenspace.Nstates
+   E0 = minimum(eigenspace.evals)
+   perm = sortperm(eigenspace.evals) # sort by Eigenenergy
 
-   printlimit = round(Int64,min(10, length(evallist)/2))
+   printlimit = round(Int64,min(10, Nstates/2))
 
-   println(io, "Eigenstates: (",printlimit," lowest and highest calculated)")
-   for i=vcat(1:printlimit, length(evallist)-printlimit+1:length(evallist))
-      E = evallist[perm][i][1] -E0
-      N = round(Int64,evallist[perm][i][2])
-      s = round(Int64,evallist[perm][i][3])
-      S = spinConfig(s,N,Nmax)
-      evstate = eveclist[perm][i]
+   println(io, "Eigenstates: (",printlimit," lowest and highest)")
+   for i=vcat(1:printlimit, Nstates-printlimit+1:Nstates)
+      E,evstate = eigenspace[perm[i]]
+      E -= E0
+      N = eigenspace.Nel[perm[i]]
+      S = eigenspace.Spin[perm[i]]
+      is = indexSpinConfig(S,N,Nmax)
+
       permV = sortperm( evstate, by=abs, rev=true )
       @printf(io, "E=%+10.5f, N=%3i, S=%+3i : ", E,N,S)
       # print the three largest contributions to the Eigenvector
       for j=1:min(2,length(evstate))
          @printf(io,  "%4.2f", abs(evstate[permV[j]])^2 ) 
-         print(io, "x",allstates[N+1][s][permV[j]],"  ")
+         print(io, "x",fockstates[N,is,permV[j]],"  ")
       end
       println(io, " ")
-      (i==printlimit) && println(io, ".\n.\n.\n")
+      (i==printlimit) && println(io, ".\n.\n.")
    end
 end
 
@@ -190,19 +191,20 @@ end
 
 Write the calculated normalization of the diagonal Green's function elements
 """
-function writeGFnorm(io::IO, gfdiagnorm::Array{Float64,1}, highestEval::Eigenvalue)
+function writeGFnorm(io::IO, gfdiagnorm::Array{Float64,1})
    println("Obtained the following normalization of the Green's function for all orbitals:")
    for n in gfdiagnorm
       @printf(io,  "%5.3f ", n )
    end
    println(" ")
    if any(gfdiagnorm .< 0.95)
-      @printf(io, "Only %3i%% of all states are in the energy window [%+4.1f,%+4.1f] \n",minimum(gfdiagnorm)*100,-highestEval,highestEval)
-      println("!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-      println("!!! Green's function is not normalized, increase Energy cutoff !!!")
-      println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+      #@printf(io, "Only %3i%% of all states are in the energy window [%+4.1f,%+4.1f] \n",minimum(gfdiagnorm)*100,-highestEval,highestEval)
+      @printf(io, "Only %3i%% of all states obtained! \n",minimum(gfdiagnorm)*100)
+      println("!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+      println("!!! Green's function is not normalized !!!")
+      println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
    else
-      @printf(io, "%5.1f%% of all states are in the energy window [%+4.1f,%+4.1f] \n",minimum(gfdiagnorm)*100,-highestEval,highestEval)
+      @printf(io, "%5.1f%% of all states obtained. \n",minimum(gfdiagnorm)*100)
    end
 end
 

@@ -7,7 +7,8 @@ const Fockstate   = Array{FockElement,1}                  # The standard Fock st
 const NSstates    = Array{Array{Array{Fockstate,1},1},1}  # An array of arrays for all Fock states for Quantum numbers N,S: typeof( allstates[N][S][i] )=Fockstate
 
 const Eigenvalue        = Float32             
-const Eigenvector       = Array{Complex{Float32},1}
+const EigenvectorElem   = Complex{Float32}
+const Eigenvector       = Array{EigenvectorElem,1}
 const EigenvectorMatrix = Array{Complex{Float32},2}
 
 const FrequencyMesh     = Array{Float32,1}
@@ -15,14 +16,51 @@ const FrequencyMeshCplx = Array{Complex{Float32},1}
 const SingleParticleFunction = Array{Complex{Float32},3}
 const TwoParticleFunction = Array{Complex{Float32},3}  # single orbital for now, depends on 3 frequencies
 
-struct ModelParameters
-   norb   ::Int64    # Number of Orbitals
-   Nmax   ::Int64    # Maximal number of electrons=2*norb
-   Nstates::Int64     # Total number of possible Fock states=4^norb  (0,up,dn,updn for each state)
+#new objects ############################################
+struct Fockstates
+   Nstates    ::Int64
+   Nmax       ::Int64  # maximum number of electrons
+   norb       ::Int64
+   nflavors   ::Int64  # the 'width' of a fockstate 2*norb
+   nstatesS ::Array{Int64,1}    # How many different S numbers available for given particle number
+   nstatesNS::Array{Int64,2}    # How many states for quantum number N and S are there
+   startNS  ::Array{Int64,3}    # starting index for state N,S,i
+   SpinNS   ::Array{Int64,2}    # the spin state S for given N,S
+   Spin     ::Array{Int64,1}    # the spin state S for Fockstate i
+   NelNS    ::Array{Int64,2}    # the number of Electrons for given N,S
+   Nel      ::Array{Int64,1}    # the number of Electrons for Fockstate i
 
-   #Constructor
-   ModelParameters(;norb) = norb>0 ? new(norb, 2*norb, 4^norb) : throw(ArgumentError("norb=$norb has to be larger than 0"))
+   fockstates::Array{FockElement,1} # Store all states in a contiguous array
 end
+
+struct Eigenspace
+   # Almost identical to Fockstates, is there a better way? (C++ like inheritance?)
+   Nstates    ::Int64 
+   Nmax       ::Int64  # maximum number of electrons
+   norb       ::Int64
+   nstatesS   ::Array{Int64,1}    # How many different S numbers available for given particle number
+   dimNS      ::Array{Int64,2}    # Dimension of the sub-Eigenspace for quantum number N and S
+   dim        ::Array{Int64,1}    # Dimension/Length of i-th Eigenvector
+   startNSeval::Array{Int64,3}    # starting index for eval N,S,i
+   startNSevec::Array{Int64,3}    # starting index for eigenstate N,S,i
+   startevec  ::Array{Int64,1}    # starting index for i-th eigenstate
+   SpinNS     ::Array{Int64,2}    # the spin state S for given N,S
+   Spin       ::Array{Int64,1}    # the spin state S for Eigenstate i
+   NelNS      ::Array{Int64,2}    # the number of electrons for given N,S
+   Nel        ::Array{Int64,1}    # the number of electrons for Eigenstate i
+
+   evals::Array{Eigenvalue,1} # Store all states in a contiguous array
+   evecs::Array{EigenvectorElem,1} # Store all states in a contiguous array
+end
+
+struct Transition
+   n1::Int64
+   n2::Int64
+   E1::Eigenvalue
+   E2::Eigenvalue
+   overlap::Complex{Float32}
+end
+# parameter structs #####################################################
 
 struct SimulationParameters
    U      ::Float64        # local Hubbard interaction
@@ -39,12 +77,8 @@ SimulationParameters(;U,J,Up=U-2*J,t,mu,beta,gf_flav) = SimulationParameters(U,J
 struct NumericalParameters
    delta            ::Float64   # broadening parameter, we work above the real axis at w+im*delta
    cutoff           ::Float64   # numerical cutoff for things like Boltzmann weights or other things
-   nevalsPerSubspace::Int64     # how much eigenvalues to obtain for each subspace (affects ARPACK directly)
-   nevalsTotalMax   ::Int64     # how much eigenvalues to keep in total from all subspaces (affects mostly memory and Green's function)
 
-   NumericalParameters(;delta,cutoff,nevalsPerSubspace,nevalsTotalMax) = (nevalsTotalMax>0 && nevalsPerSubspace>0) ? 
-                                               new(delta,cutoff,nevalsPerSubspace,nevalsTotalMax) :
-                                               throw(DomainError((nevalsPerSubspace, nevalsTotalMax),"nevalsPerSubspace=$nevalsPerSubspace, nevalsTotalMax=$nevalsTotalMax have to be larger than 0"))
+   NumericalParameters(;delta,cutoff) = new(delta,cutoff)
 end
 
 # Outer Constructor for FrequencyMeshes

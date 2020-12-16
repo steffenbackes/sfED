@@ -5,14 +5,14 @@
 Return the local orbital levels, define them by hand here. Values are perturbed by `smallValue`
 TODO: this should be overloaded to accept text file or command line inputs.
 """
-function getEps(pNumerics::NumericalParameters, pModel::ModelParameters)
-   eps = zeros(Float64,pModel.Nmax)
-   for i=0:pModel.norb-1              # Just shift one orbital down, the other up by +-1
+function getEps(fockstates::Fockstates, pNumerics::NumericalParameters)
+   eps = zeros(Float64,fockstates.Nmax)
+   for i=0:fockstates.norb-1              # Just shift one orbital down, the other up by +-1
       eps[2*i+1] = 1.0*(-1)^i    # up spin
       eps[2*i+2] = eps[2*i+1]    #dn spin
    end
 
-   if pModel.norb==5  # Use Julian's AIM benchmark system
+   if fockstates.norb==5  # Use Julian's AIM benchmark system
       for s=1:2
          eps[2*0+s] = 0.0
          eps[2*1+s] = 1.0387225695696338   
@@ -23,7 +23,7 @@ function getEps(pNumerics::NumericalParameters, pModel::ModelParameters)
    end
 
    # add a very small random term to each local level to lift degeneracy and improve numerical stability
-   for i=1:pModel.Nmax
+   for i=1:fockstates.Nmax
       eps[i] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
    end
    return eps
@@ -35,14 +35,14 @@ end
 Return the hoppingmatrix, defined by hand here
 TODO: this should be overloaded to accept text file or command line inputs.
 """
-function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
-   tmatrix = Array{Float64}(undef,pModel.norb,pModel.norb)
+function getTmatrix(fockstates::Fockstates,pSimulation::SimulationParameters)
+   tmatrix = Array{Float64}(undef,fockstates.norb,fockstates.norb)
    t = pSimulation.t
-   if pModel.norb==2
+   if fockstates.norb==2
       # A B dimer with one orbital per site
       tmatrix = -[0 t;
                   t 0]
-   elseif pModel.norb==4
+   elseif fockstates.norb==4
       # A B dimer with two orbitals per site
       tmatrix = -[0 0 t 0;
                   0 0 0 t;
@@ -54,7 +54,7 @@ function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
 #                  t 0 0 t;
 #                  t 0 0 t;
 #                  0 t t 0]
-   elseif pModel.norb==5
+   elseif fockstates.norb==5
       # Use Julian's AIM benchmark system
       t1 = 0.27400603088302322
       t2 = 0.22567506210351471
@@ -65,7 +65,7 @@ function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
                   t2 0 0 0 0;
                   t3 0 0 0 0;
                   t4 0 0 0 0]
-   elseif pModel.norb==6
+   elseif fockstates.norb==6
       # A B C trimer with two orbitals per site
       tmatrix = -[0 0 t 0 0 0;
                   0 0 0 t 0 0;
@@ -73,7 +73,7 @@ function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
                   0 t 0 0 0 t;
                   0 0 t 0 0 0;
                   0 0 0 t 0 0]
-   elseif pModel.norb==8
+   elseif fockstates.norb==8
       # A B plaquette with two orbitals per site
       # C D
       tmatrix = -[0 0 t 0 t 0 0 0;
@@ -85,8 +85,8 @@ function getTmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
                   0 0 t 0 t 0 0 0;
                   0 0 0 t 0 t 0 0]
     else
-        println("No t matrix implemented for norb=",pModel.norb,", set hopping matrix to zero!")
-        tmatrix = zeros(Float64,pModel.norb,pModel.norb)
+        println("No t matrix implemented for norb=",fockstates.norb,", set hopping matrix to zero!")
+        tmatrix = zeros(Float64,fockstates.norb,fockstates.norb)
    end
    return tmatrix
 end
@@ -97,22 +97,22 @@ end
 Return the Coulomb interaction matrices, defined by hand here
 TODO: this should be overloaded to accept text file or command line inputs.
 """
-function getUJmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
-   Umatrix = Array{Float64}(undef,pModel.norb,pModel.norb)
-   Jmatrix = Array{Float64}(undef,pModel.norb,pModel.norb)
+function getUJmatrix(fockstates::Fockstates,pSimulation::SimulationParameters)
+   Umatrix = Array{Float64}(undef,fockstates.norb,fockstates.norb)
+   Jmatrix = Array{Float64}(undef,fockstates.norb,fockstates.norb)
    U = pSimulation.U
    Up = pSimulation.Up
    J = pSimulation.J
 
-   if (pModel.norb==1)
+   if (fockstates.norb==1)
       Umatrix = [U]
       Jmatrix = [0]
-   elseif (pModel.norb==2)
+   elseif (fockstates.norb==2)
       Umatrix = [U Up;
                  Up U]
       Jmatrix = [0 J;
                  J 0]
-   elseif pModel.norb==4
+   elseif fockstates.norb==4
       # A B dimer
       Umatrix = [U Up 0 0;   # we assume two orbitals per site
                  Up U 0 0;
@@ -122,7 +122,7 @@ function getUJmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
                  J 0 0 0;
                  0 0 0 J;
                  0 0 J 0]
-   elseif pModel.norb==5
+   elseif fockstates.norb==5
       # Take julian's AIM benchmark
       Umatrix = [U 0 0 0 0;   # single orbital AIM and 4 bath sites
                  0 0 0 0 0;
@@ -134,7 +134,7 @@ function getUJmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
                  0 0 0 0 0;
                  0 0 0 0 0;
                  0 0 0 0 0.0]
-   elseif pModel.norb==6
+   elseif fockstates.norb==6
       # A B C trimer
       Umatrix = [U Up 0 0 0 0; # we assume two orbitals per site
                  Up U 0 0 0 0;
@@ -148,7 +148,7 @@ function getUJmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
                  0 0 J 0 0 0;
                  0 0 0 0 0 J;
                  0 0 0 0 J 0]
-   elseif pModel.norb==8
+   elseif fockstates.norb==8
       # A B plaquette
       # C D
       Umatrix = [U Up 0 0 0 0 0 0; # we assume two orbitals per site
@@ -168,7 +168,7 @@ function getUJmatrix(pModel::ModelParameters,pSimulation::SimulationParameters)
                  0 0 0 0 0 0 0 J;
                  0 0 0 0 0 0 J 0]
     else
-        println("No UJ matrix implemented for norb=",pModel.norb,", set interaction to zero!")
+        println("No UJ matrix implemented for norb=",fockstates.norb,", set interaction to zero!")
    end
    return Umatrix,Jmatrix
 end
@@ -340,7 +340,7 @@ over precomputed `states`.
 function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
                   Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2}, 
                   mu::Float64,
-                  states::Array{Fockstate,1},
+                  states::Array{Array{FockElement,1},1},
                   pNumerics::NumericalParameters)::Hamiltonian
 
    #println("!!WARNING: To simulate an AIM we excluded the bath states from the chemical potential in hamiltonian.jl !!!")
@@ -396,21 +396,19 @@ end
 
 Diagonalize a given `Hamiltonian`. Eigenvalues will be cast to real, since the Hamiltonian is hermitian.
 """
-function getEvalEvecs(hamiltonian::Hamiltonian,
-                      nevalsPerSubspace::Int64 )::Tuple{Array{Eigenvalue,1}, EigenvectorMatrix }
-   @assert nevalsPerSubspace>0
+function getEvalEvecs(hamiltonian::Hamiltonian)::Tuple{Array{Eigenvalue,1}, EigenvectorMatrix }
 
-   dim = size(hamiltonian)[1]
-
-   if  dim<10 || nevalsPerSubspace>0.7*dim    # Full diagonalization if matrix is small 
+#   dim = size(hamiltonian)[1]
+#
+#   if  dim<10 || nevalsPerSubspace>0.7*dim    # Full diagonalization if matrix is small 
       HamDense = Matrix(hamiltonian)
       evals = eigvals(HamDense)
       evecs = eigvecs(HamDense)
       return real(evals), evecs
-   else                              # Otherwise use Arpack
-      evals,evecs = eigs(hamiltonian,nev=nevalsPerSubspace,which=:SR)
-      return real(evals), evecs
-   end
+#   else                              # Otherwise use Arpack
+#      evals,evecs = eigs(hamiltonian,nev=nevalsPerSubspace,which=:SR)
+#      return real(evals), evecs
+#   end
 end
 
 """
@@ -421,19 +419,22 @@ Create the N,S submatrices of the Hamiltonian, solve it and return the Eigenvalu
 function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
                   Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
                   mu::Float64,
-                  allstates::NSstates,
+                  fockstates::Fockstates,
+                  lenEvecs::Int64,
                   pNumerics::NumericalParameters)
-   evallist::Array{Array{Eigenvalue,1},1}          = [] # this list stores the lowest of the smallest eigenvalues and N, S quantum numbers
-   eveclist::Array{Eigenvector,1} = [] # this list stores the lowest of the smallest eigenvectors
+   evallist = zeros(Eigenvalue,fockstates.Nstates) 
+   eveclist = zeros(EigenvectorElem,lenEvecs)      
 
-   Nmax = getNmaxFromAllstates(allstates)
+   Nmax = fockstates.Nmax
+   ii_evals = 1
+   ii_evecs = 1
    for n=0:Nmax
       for s=1:noSpinConfig(n,Nmax)
-         dim = length(allstates[n+1][s])
+         dim = fockstates.nstatesNS[n+1,s]
          print("Constructing Hamiltonian(",dim,"x",dim,"), N=",n,", S=",spinConfig(s,n,Nmax),"... ")
 
          # now get the Hamiltonian submatrix spanned by all states <i| |j> in the N,S space (sparse matrix)
-         hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,allstates[n+1][s],pNumerics)
+         hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,fockstates[n,s,:],pNumerics)
          println("Done!")
 
          #if (n==8 && spinConfig(s,n,Nmax)==0)
@@ -442,42 +443,18 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
          #end
    
          print("Diagonalizing Hamiltonian... ")
-         evals,evecs = getEvalEvecs(hamiltonian, pNumerics.nevalsPerSubspace)
+         evals,evecs = getEvalEvecs(hamiltonian)
          
          # save the pairs of eigvals and eigvecs, also the N,S quantum numbers
-         for i=1:min(pNumerics.nevalsPerSubspace,length(evals))
-            push!( evallist, [ evals[i], n, s, spinConfig(s,n,Nmax) ] )
-            push!( eveclist, evecs[:,i] )
+         for i=1:length(evals)
+            evallist[ii_evals] = evals[i]
+            ii_evals += 1
+
+            eveclist[ii_evecs:ii_evecs+dim-1] = copy(evecs[:,i])
+            ii_evecs += dim
          end
          println("Done!")
    
-         # now sort and trim the list of eigenvalues and vectors since we only want to keep nevalsTotalMax
-         perm = sortperm(first.(evallist))
-         evallist =copy( ( evallist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
-         eveclist =copy( ( eveclist[perm] )[1:min(pNumerics.nevalsTotalMax,length(evallist))] )
-
-         ###########################################################################
-         # THIS IS STILL TESTING STATUS
-#        i0 = argmin( first.(evallist) )
-#        N0 = evallist[i0][2]
-#        S0 = evallist[i0][4]
-#
-#        NSlist = [ [evallist[i][2],evallist[i][4]] for i=1:length(evallist)  ]
-#        connectedSpace  = findall(x->(x==[N0-1,S0-1] || x==[N0+1,S0+1]), NSlist)
-#        restSpace       = findall(x->(x!=[N0-1,S0-1] && x!=[N0+1,S0+1]), NSlist)
-#
-#        restEvals = evallist[restSpace]
-#        restEvecs = eveclist[restSpace]
-#
-#        perm = sortperm(first.(restEvals))
-#
-#        take=min(pNumerics.nevalsPerSubspace,length(restEvals))
-#        keep = max(0, pNumerics.nevalsTotalMax-take-length(connectedSpace) )
-#        
-#        evallist = vcat(  copy(restEvals[perm][1:take]) , copy(evallist[connectedSpace]), copy(restEvals[perm][take+1:min(keep,end)])   )
-#        eveclist = vcat(  copy(restEvecs[perm][1:take]) , copy(eveclist[connectedSpace]), copy(restEvecs[perm][take+1:min(keep,end)])   )
-         ###########################################################################
-
          
       end # s
    end # n
@@ -490,8 +467,7 @@ end
 
 Calculate partition function from the eigenvalues in `evallist`.
 """
-function getZ(evallist::Array{Array{Eigenvalue,1},1}, beta::Float64)
-   evals = first.(evallist)
+function getZ(evals::Array{Eigenvalue,1}, beta::Float64)
    E0 = minimum(evals)
    return sum( exp.(-beta.*( evals .-E0)) )  # subtract E0 to avoid overflow
 end
