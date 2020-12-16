@@ -135,15 +135,15 @@ function getGF(transitions::Array{Array{Transition,1},1},
    # GF is defined as in the pdf docu:
    # <n1| c_a |n2><n2| cdag_b |n1>
    for a=1:length(pSimulation.gf_flav)
-      transitionsN1aN2 = transitions[2*a-1] # we look up <2|cdag_a|1>
+      transitionsN1aN2 = transitions[2*a-1] # we look up <2|cdag_a|1> which is the same as <1|c_a|2>* what we actually want
 
       for b=a:length(pSimulation.gf_flav) # only upper triangular part
          transitionsN2bN1 = transitions[2*b-1]  # <2|cdag_b|1>
 
          for tN2bN1 in transitionsN2bN1
-            if tN2bN1 in transitionsN1aN2
-
-               tN1aN2 = transitionsN1aN2[findall(x->x==tN2bN1, transitionsN1aN2)[1]] 
+            #check whether this transition is also available for <1|c_a|2>
+            for it in findall(x->x==tN2bN1, transitionsN1aN2)   # this can be only one or no element
+               tN1aN2 = transitionsN1aN2[it] 
             
                ovrlp = (exp(-beta*tN1aN2.E1)+exp(-beta*tN1aN2.E2))*conj(tN1aN2.overlap)*tN2bN1.overlap      # <n1|c_a|n2> * <n2|cdag_b|n1>
                gf_w[a,b,:]  += ovrlp ./ ( pFreq.wf     .+ (pNumerics.delta*im + tN1aN2.E1 - tN1aN2.E2) )
@@ -646,12 +646,13 @@ function getPossibleTransitions(eigenspace::Eigenspace,
             if n2states>0
                s2 = indexSpinConfig(S2,n2,Nmax)       # this works because we checked this subspace exists
                cmat = getCmatrix(flavors[m], fockstates[n2,s2,:], fockstates[n1,s1,:])
-
                for i=1:eigenspace.dimNS[n1+1,s1] # now loop over the |1> subspace
                   E1,evec1 = eigenspace[n1,s1,i]
+                  E1-=E0
 
                   for j=1:eigenspace.dimNS[n2+1,s2] # and loop over the <2| subspace
                      E2,evec2 = eigenspace[n2,s2,j]
+                     E2-=E0
 
                      if expCutoff==0 || (exp(-beta*E1)+exp(-beta*E2))>pNumerics.cutoff
                         ovrlp = dot( evec2, cmat * evec1 )

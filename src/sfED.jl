@@ -16,14 +16,14 @@ include("IO.jl")
 include("greensfunction.jl")
 
 function example_run()
-   norb = 4
+   norb = 6
    U = 3.0
    J = 0.3
    Up = U-2*J
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
    beta = 40.0
-   gf_flav = [1,5]
+   gf_flav = [1]
 
    pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
    pFreq = FrequencyMeshes(nw=501,

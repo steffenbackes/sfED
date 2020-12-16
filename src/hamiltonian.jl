@@ -401,7 +401,7 @@ function getEvalEvecs(hamiltonian::Hamiltonian)::Tuple{Array{Eigenvalue,1}, Eige
 #   dim = size(hamiltonian)[1]
 #
 #   if  dim<10 || nevalsPerSubspace>0.7*dim    # Full diagonalization if matrix is small 
-      HamDense = Matrix(hamiltonian)
+      HamDense = Hermitian(Matrix(hamiltonian))
       evals = eigvals(HamDense)
       evecs = eigvecs(HamDense)
       return real(evals), evecs
