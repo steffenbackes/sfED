@@ -1,7 +1,7 @@
-#module sfED
-#__precompile__(false)
+module sfED
+__precompile__(false)
 
-#export example_run, noSpinConfig
+export example_run, noSpinConfig
 
 using Arpack
 using LinearAlgebra
@@ -23,8 +23,8 @@ function example_run()
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
    beta = 40.0
-   #gf_flav = [1]
-   gf_flav = [2*m-1 for m in 1:norb]
+   gf_flav = [1,5]
+   #gf_flav = [2*m-1 for m in 1:norb]
 
    pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
    pFreq = FrequencyMeshes(nw=501,
@@ -62,11 +62,12 @@ function example_run()
    writeEvalInfo(eigenspace,fockstates)
 
    println("Determining overlaps between eigenvectors...")
-   transitions1pGF = getPossibleTransitions(eigenspace,fockstates,pSimulation.gf_flav,pSimulation.beta,pNumerics,1)   # contains list of possible transitions, E1,E2 and the overlap elements
+   transitions1pGF = get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
-#
+
    println("Create interacting single-particle Green's function...")
    gf_w, gf_iw = getGF(transitions1pGF,getZ(eigenspace.evals,pSimulation.beta),pSimulation,pFreq,pNumerics)
+   gf_w, gf_iw = @time getGF(transitions1pGF,getZ(eigenspace.evals,pSimulation.beta),pSimulation,pFreq,pNumerics)
 
    sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = getSigma(gf0_iw,gf_iw)
@@ -85,5 +86,5 @@ function example_run()
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
 
    end # end example function
-#end
-example_run()
+end
+#example_run()

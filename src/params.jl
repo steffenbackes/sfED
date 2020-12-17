@@ -53,12 +53,15 @@ struct Eigenspace
    evecs::Array{EigenvectorElem,1} # Store all states in a contiguous array
 end
 
-struct Transition
-   n1::Int64
-   n2::Int64
-   E1::Eigenvalue
-   E2::Eigenvalue
-   overlap::Complex{Float32}
+struct Transitions
+   Nmax       ::Int64  # maximum number of electrons
+   nstatesS   ::Array{Int64,1}    # How many different S numbers available for given particle number
+   dimNS      ::Array{Int64,2}    # number of Transitions in the N,S subspace
+   startNS    ::Array{Int64,3}    # starting index for the transition N,S,i
+   FromTo     ::Array{Int64,2}    # Store all transitions as (from -> to) e.g. FromTo[i,:] = (13,14)
+   EvalFromTo ::Array{Eigenvalue,2}    # Store the eigenvalues in the same way as FromTo
+   isFromTo   ::Array{Eigenvalue,2}    # Store the is spin numbers in the same way as FromTo
+   overlap    ::Array{Complex{Float32},1} # Store all overlaps in a contiguous array
 end
 # parameter structs #####################################################
 

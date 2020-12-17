@@ -112,7 +112,7 @@ Evaluation of the Lehmann representation for the interacting finite-temperature 
 We sum over all Eigenstates `evallist` with electron number N and all other eigenstates n2 with electron number N-1
 Since we have spin degeneracy, we only calculate the up GF, so we annihilate one up spin, so we also only sum over all S-1 states for given S(n1)
 """
-function getGF(transitions::Array{Array{Transition,1},1},
+function getGF(transitions::Array{Transitions,1},
                Z::Float64,
                pSimulation::SimulationParameters,
                pFreq::FrequencyMeshes,
@@ -140,29 +140,41 @@ function getGF(transitions::Array{Array{Transition,1},1},
    # GF is defined as in the pdf docu:
    # <n1| c_a |n2><n2| cdag_b |n1>
    for b=1:length(pSimulation.gf_flav)
-      transitionsN2bN1 = transitions[2*b-1] # <2|cdag_b|1>
-      for tN2bN1 in transitionsN2bN1
+      # loop over all transitions c^dag_b|1>
+      transCdagB = transitions[2*b-1]
 
-         for a=1:b # only upper triangular part
-            transitionsN1aN2 = transitions[2*a-0]  # <1|c_a|2>
+      for n1=0:transCdagB.Nmax
+         for s1=1:transCdagB.nstatesS[n1+1]
+            for i=1:transCdagB.dimNS[n1+1,s1]
+               t2cdagb1 = transCdagB[n1,s1,i]
+               ifrom = Int64(t2cdagb1[1])
+               ito   = Int64(t2cdagb1[2])
+               Efrom = t2cdagb1[3]
+               Eto   = t2cdagb1[4]
+               isfrom = Int64(t2cdagb1[5])
+               isto   = Int64(t2cdagb1[6])
+               ovrlpB = t2cdagb1[7]
+               nto = n1+1
 
-            #check whether this transition is also available for <1|c_a|2>
-            for it in findall(x->(x.n1==tN2bN1.n2 && x.n2==tN2bN1.n1), transitionsN1aN2)   # this can be only one or no element
-               tN1aN2 = transitionsN1aN2[it] 
-            
-               ovrlp = (exp(-beta*tN1aN2.E1)+exp(-beta*tN1aN2.E2))*tN1aN2.overlap*tN2bN1.overlap      # <n1|c_a|n2> * <n2|cdag_b|n1>
-               gf_w[a,b,:]  += ovrlp ./ ( pFreq.wf     .+ (pNumerics.delta*im + tN1aN2.E1 - tN1aN2.E2) )
-               gf_iw[a,b,:] += ovrlp ./ ( im*pFreq.iwf .+ (                   + tN1aN2.E1 - tN1aN2.E2) )
-              # evalContributions[n,4] += abs(ovrlp)
-              # evalContributions[m,4] += abs(ovrlp)
-               if a==b
-                  gfdiagnorm[a] += real(ovrlp)
-               end
-            end
+               for a=1:b # only upper triangular part
+                  transCA = transitions[2*a-0]  # <1|c_a|2> # the transition is already fixed by <n2| |n1>
 
-         end # for tN2bN1 in transitionsN2bN1
-      end # b loop
-   end # a loop
+                  ovrlp = (exp(-beta*Efrom)+exp(-beta*Eto))*transCA[nto,isto,ito,ifrom]*ovrlpB      # <n1|c_a|n2> * <n2|cdag_b|n1>
+
+                  if abs(ovrlp)>pNumerics.cutoff
+                     gf_w[a,b,:]  += ovrlp ./ ( pFreq.wf     .+ (pNumerics.delta*im + Efrom - Eto) )
+                     gf_iw[a,b,:] += ovrlp ./ ( im*pFreq.iwf .+ (                   + Efrom - Eto) )
+                    # evalContributions[n,4] += abs(ovrlp)
+                    # evalContributions[m,4] += abs(ovrlp)
+                     if a==b
+                        gfdiagnorm[a] += real(ovrlp)
+                     end
+                  end
+               end # a loop
+            end # i transition from <2|c^dag_b|1>
+         end # s1
+      end # n1 loop
+   end # b loop
     println("\rdone!")
    
    # copy the offdiagonals (not true copy in julia, just referencing but this is ok)
@@ -644,100 +656,127 @@ Calculate the overlap elements between all Eigenstates acting on c/c^dagger spec
 The function returns the overlap array and possibleTransitions for cdagger,c for 
 the flavors specified in the flavors array (1=orb1,up, 2=orb1,dn, 3=orb2,up, ....)
 """
-function getPossibleTransitions(eigenspace::Eigenspace,
-                                fockstates::Fockstates,
-                                flavors::Array{Int64,1},
-                                beta::Float64,
-                                pNumerics::NumericalParameters,
-                                expCutoff::Int64)
+function Transitions(flavor::Int64,
+                     eigenspace::Eigenspace,
+                     fockstates::Fockstates,
+                     beta::Float64,
+                     pNumerics::NumericalParameters,
+                     expCutoff::Int64)
+	# if flavor>0 we calculate c^dagger
+	# if flavor<0 we calculate c
+
    Nmax = fockstates.Nmax
    nstates = fockstates.Nstates
-   nflavors = length(flavors)
    E0 = minimum(eigenspace.evals)
 
-   transitions = [ Transition[] for a=1:nflavors*2 ]
-   # we always calculate crea and anni overlap for each flavor, i.e. norb*2 
-   # ordering is crea_1,anni_1, crea_2,anni2, ....
+   FromToList = [ ]
+   EvalFromToList = [ ]
+   isFromToList = [ ]
+   overlapList = Complex{Float64}[ ]
+   nSmax = size(fockstates.startNS)[2]
+   dimNS = zeros(Int64,Nmax+1,nSmax)
+   dimMax = 0
 
+   nTransitions = 0
    for n1=0:Nmax
-      if n1%(max(1,round(Int64,Nmax/100.0))) == 0
-            print("\r"*lpad(round(Int64,n1*100.0/Nmax),4)*"%")
-      end
+      #if n1%(max(1,round(Int64,Nmax/100.0))) == 0
+      #      print("\r"*lpad(round(Int64,n1*100.0/Nmax),4)*"%")
+      #end
       
       for s1=1:fockstates.nstatesS[n1+1]
          S1 = eigenspace.SpinNS[n1+1,s1] # spin S in this subspace
 
          # for given N1,S1 we have the same c,c^dag matrices
-         for m=1:nflavors
-            dS = 2*(flavors[m]%2)-1 # spin increases by 1 for crea if up flavor, etc
+         dS = 2*(abs(flavor)%2)-1 # spin increases by 1 for crea if up flavor, etc
  
-            # # Cdagger  <2|c^dag|1> ##############################################
-            n2 = n1+1
-            S2 = S1+dS
-            n2states = nstatesNS(fockstates,n2,S2) # are there any states in the new subspace?
+         # #  <2|cmat|1> ##############################################
+         n2 = n1 + sign(flavor)
+         S2 = S1 + dS*sign(flavor)
+         n2states = nstatesNS(fockstates,n2,S2) # are there any states in the new subspace?
 
-            if n2states>0
-               s2 = indexSpinConfig(S2,n2,Nmax)       # this works because we checked this subspace exists
-               creamat = getCdagmatrix(flavors[m], fockstates[n2,s2,:], fockstates[n1,s1,:])
+         if n2states>0
+            s2 = indexSpinConfig(S2,n2,Nmax)       # this works because we checked this subspace exists
+				cmat = sparse([1],[1],[1])
+				if flavor>0
+	            cmat = getCdagmatrix(abs(flavor), fockstates[n2,s2,:], fockstates[n1,s1,:])
+            else
+	            cmat = getCmatrix(abs(flavor), fockstates[n2,s2,:], fockstates[n1,s1,:])
+            end
 
-               for i=1:eigenspace.dimNS[n1+1,s1] # now loop over the |1> subspace
-                  E1,evec1 = eigenspace[n1,s1,i]
-                  E1-=E0
+            for i=1:eigenspace.dimNS[n1+1,s1] # now loop over the |1> subspace
+               Efrom,evecfrom = eigenspace[n1,s1,i]
+               Efrom-=E0
 
-                  for j=1:eigenspace.dimNS[n2+1,s2] # and loop over the <2| subspace
-                     E2,evec2 = eigenspace[n2,s2,j]
-                     E2-=E0
+               for j=1:eigenspace.dimNS[n2+1,s2] # and loop over the <2| subspace
+                  Eto,evecto = eigenspace[n2,s2,j]
+                  Eto-=E0
 
-                     if expCutoff==0 || (exp(-beta*E1)+exp(-beta*E2))>pNumerics.cutoff
-                        ovrlp = dot( evec2, creamat * evec1 )
-                        if abs(ovrlp) > pNumerics.cutoff
-                           index1 = eigenspace.startNSeval[n1+1,s1,i]
-                           index2 = eigenspace.startNSeval[n2+1,s2,j]
-                           push!( transitions[2*m-1], Transition(index2,index1,E2,E1,ovrlp) )
+                  if expCutoff==0 || (exp(-beta*Efrom)+exp(-beta*Eto))>pNumerics.cutoff
+                     ovrlp = dot( evecto, cmat * evecfrom )
+                     if abs(ovrlp) > pNumerics.cutoff
+                        ifrom = eigenspace.startNSeval[n1+1,s1,i]
+                        ito = eigenspace.startNSeval[n2+1,s2,j]
+                        push!( FromToList, [ifrom,ito] )
+                        push!( EvalFromToList, [Efrom,Eto] )
+                        push!( isFromToList, [s1,s2] )
+                        push!( overlapList, ovrlp )
+
+                        dimNS[n1+1,s1] += 1
+                        nTransitions += 1
+                        if dimNS[n1+1,s1]>dimMax
+                           dimMax = dimNS[n1+1,s1]
                         end
-                     end # exp cutoff if needed
-                  end # j states <2|
-               end # i states |1>
-            end # n2states >0
+                        #println(index1,"->",index2,": N1=",n1,", S1=",S1,", N2=",n2,", S2=",S2)
+                     end # overlap cutoff
+                  end # exp cutoff if needed
+               end # j states <2|
+            end # i states |1>
+         end # n2states >0
 
-            # # C  <2|c|1> ##############################################
-            n2 = n1-1
-            S2 = S1-dS
-            n2states = nstatesNS(fockstates,n2,S2) # are there any states in the new subspace?
-
-            if n2states>0
-               s2 = indexSpinConfig(S2,n2,Nmax)       # this works because we checked this subspace exists
-               cmat = getCmatrix(flavors[m], fockstates[n2,s2,:], fockstates[n1,s1,:])
-               for i=1:eigenspace.dimNS[n1+1,s1] # now loop over the |1> subspace
-                  E1,evec1 = eigenspace[n1,s1,i]
-                  E1-=E0
-
-                  for j=1:eigenspace.dimNS[n2+1,s2] # and loop over the <2| subspace
-                     E2,evec2 = eigenspace[n2,s2,j]
-                     E2-=E0
-
-                     if expCutoff==0 || (exp(-beta*E1)+exp(-beta*E2))>pNumerics.cutoff
-                        ovrlp = dot( evec2, cmat * evec1 )
-                        if abs(ovrlp) > pNumerics.cutoff
-                           index1 = eigenspace.startNSeval[n1+1,s1,i]
-                           index2 = eigenspace.startNSeval[n2+1,s2,j]
-                           push!( transitions[2*m-0], Transition(index2,index1,E2,E1,ovrlp) )
-                        end
-                     end # exp cutoff if needed
-                  end # j states <2|
-               end # i states |1>
-            end # n2states >0
-
-         end # m flavors
       end # s1
-      #println( n1,": N=",N1,", S=",S1," -> ",length(possibleTransitions[1][n1])," (",round(length(possibleTransitions[1][n1])*100.0/nstates,digits=2)," %)" )
    end # n1
-    println("\rdone!")
-   return transitions
+   #println("\rdone!")
+
+   startNS    = zeros(Int64,Nmax+1,nSmax,dimMax)
+   FromTo     = Array{Int64}(undef,nTransitions,2)
+   isFromTo   = Array{Int64}(undef,nTransitions,2)
+   EvalFromTo = Array{Eigenvalue}(undef,nTransitions,2)
+   ii=1
+   for n1=0:Nmax
+      for s1=1:fockstates.nstatesS[n1+1]
+         for i=1:dimNS[n1+1,s1]
+            startNS[n1+1,s1,i] = ii
+            FromTo[ii,:] .= FromToList[ii]
+            EvalFromTo[ii,:] .= EvalFromToList[ii]
+            isFromTo[ii,:] .= isFromToList[ii]
+            ii+=1
+         end
+      end
+   end
+   
+   return Transitions(Nmax,fockstates.nstatesS,dimNS,startNS,FromTo,EvalFromTo,isFromTo,overlapList)
 end
 
 #########################################################################################
+function get1pGFTransitions(flavors::Array{Int64,1},
+                     eigenspace::Eigenspace,
+                     fockstates::Fockstates,
+                     beta::Float64,
+                     pNumerics::NumericalParameters)
+	# if flavor>0 we calculate c^dagger
+	# if flavor<0 we calculate c
 
+   # we return c^dagger and c for all flavors
+   transitions = Transitions[]
+   for m in flavors
+      push!( transitions, Transitions( m,eigenspace,fockstates,beta,pNumerics,1) ) #c^dagger
+      push!( transitions, Transitions(-m,eigenspace,fockstates,beta,pNumerics,1) ) # c
+   end
+   return transitions
+end
+
+
+#################
 """
     getSigma(G0, G)
 

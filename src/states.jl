@@ -217,12 +217,72 @@ function nstatesNS(fs::Fockstates,N::Int64,S::Int64)
 end
 
 
+#"""
+#   ==(Transition,Transition)
+#"""
+#Base.:(==)(t1::Transition, t2::Transition) = t1.n1==t2.n1 && t1.n2==t2.n2
+
 """
-   ==(Transition,Transition)
+   getindex(tr,n,is,i)
+Return the i-th transition from N,S -> dN,dS: (indexFrom, indexTo, Efrom,Eto,isfrom, isto, overlap)
 """
-Base.:(==)(t1::Transition, t2::Transition) = t1.n1==t2.n1 && t1.n2==t2.n2
+function Base.getindex(tr::Transitions,n::Int64,is::Int64,i::Int64)
+   @assert n>=0  # n is particle number and can be zero
+   @assert n<=tr.Nmax
+   @assert is>0
+   @assert is<=tr.nstatesS[n+1]
+   @assert i>0
+   @assert i<=tr.dimNS[n+1,is]
+   ii = tr.startNS[n+1,is,i]
+   return [tr.FromTo[ii,1], tr.FromTo[ii,2], tr.EvalFromTo[ii,1], tr.EvalFromTo[ii,2], tr.isFromTo[ii,1], tr.isFromTo[ii,2], tr.overlap[ii] ]
+end
+
+"""
+   getindex(tr,n,is,:)
+Return transitions from N,S -> dN,dS
+"""
+function Base.getindex(tr::Transitions,n::Int64,is::Int64,::Colon)
+   @assert n>=0  # n is particle number and can be zero
+   @assert n<=tr.Nmax
+   @assert is>0
+   @assert is<=tr.nstatesS[n+1]
+   return [ tr[n,is,i] for i=1:tr.dimNS[n+1,is]]
+end
+
+"""
+   getindex(tr,n,is,ifrom,ito)
+Return the overlap for the transition (ifrom->ito) from N,S -> dN,dS
+Return zero if not existing
+"""
+function Base.getindex(tr::Transitions,n::Int64,is::Int64,ifrom::Int64, ito::Int64)
+   @assert n>=0  # n is particle number and can be zero
+   @assert n<=tr.Nmax
+   @assert is>0
+   @assert is<=tr.nstatesS[n+1]
+   istart = tr.startNS[n+1,is,1]
+   iend = istart+tr.dimNS[n+1,is]-1
+   ovrlp = 0
+   for it in findall(x->x==[ifrom,ito], [ tr.FromTo[istart:iend,:][t,:] for t=1:iend-istart+1 ])
+      ovrlp = tr.overlap[tr.startNS[n+1,is,it]]
+   end
+   return ovrlp
+end
+
+"""
+   ntransitionsNS(tr,N,S)
+Return number of transitions for given N and S
+"""
+function ntransitionsNS(tr::Transitions,N::Int64,S::Int64)
+   is = indexSpinConfig(S,N,tr.Nmax)
+   if ( is != -1 ) # then it's a valid N,S combination for these states
+      return tr.dimNS[N+1,is]
+   else
+      return 0
+   end
+end
 
 #####################################################################
+
 """
    Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,fockstates,pNumerics)
 Constructor for the Eigenspace struct
