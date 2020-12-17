@@ -6,7 +6,7 @@ Return the local orbital levels, define them by hand here. Values are perturbed 
 TODO: this should be overloaded to accept text file or command line inputs.
 """
 function getEps(fockstates::Fockstates, pNumerics::NumericalParameters)
-   eps = zeros(Float64,fockstates.Nmax)
+   eps = zeros(Float64,fockstates.norb*2)
    for i=0:fockstates.norb-1              # Just shift one orbital down, the other up by +-1
       eps[2*i+1] = 1.0*(-1)^i    # up spin
       eps[2*i+2] = eps[2*i+1]    #dn spin
@@ -23,7 +23,7 @@ function getEps(fockstates::Fockstates, pNumerics::NumericalParameters)
    end
 
    # add a very small random term to each local level to lift degeneracy and improve numerical stability
-   for i=1:fockstates.Nmax
+   for i=1:length(eps)
       eps[i] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
    end
    return eps
@@ -338,10 +338,10 @@ over precomputed `states`.
 
 """
 function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
-                  Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2}, 
-                  mu::Float64,
-                  states::Array{Array{FockElement,1},1},
-                  pNumerics::NumericalParameters)::Hamiltonian
+                        Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2}, 
+                        mu::Float64,
+                        states::Array{Fockstate,1},
+                        pNumerics::NumericalParameters)::Hamiltonian
 
    #println("!!WARNING: To simulate an AIM we excluded the bath states from the chemical potential in hamiltonian.jl !!!")
 
@@ -353,7 +353,7 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
       Hiitmp = 0.0
       # set the diagonals 
       Hiitmp += -mu*sum(states[i])     # chemical potential
-      #Hiitmp += -mu*sum(states[i][1:2])     # chemical potential
+      #Hiitmp += -mu*sum(states[i][1:2])     # chemical potential: this is when doing an AIM one-orbital calculation
 
       Hiitmp += sum(eps .* states[i] ) # onsite levels
    
@@ -398,43 +398,34 @@ Diagonalize a given `Hamiltonian`. Eigenvalues will be cast to real, since the H
 """
 function getEvalEvecs(hamiltonian::Hamiltonian)::Tuple{Array{Eigenvalue,1}, EigenvectorMatrix }
 
-#   dim = size(hamiltonian)[1]
-#
-#   if  dim<10 || nevalsPerSubspace>0.7*dim    # Full diagonalization if matrix is small 
       HamDense = Hermitian(Matrix(hamiltonian))
       evals = eigvals(HamDense)
       evecs = eigvecs(HamDense)
       return real(evals), evecs
-#   else                              # Otherwise use Arpack
-#      evals,evecs = eigs(hamiltonian,nev=nevalsPerSubspace,which=:SR)
-#      return real(evals), evecs
-#   end
 end
 
 """
-    getEvalveclist(eps,tmatrix,Umatrix,Jmatrix,allstates)
+    getEvalveclist(eps,tmatrix,Umatrix,Jmatrix,mu,fockstates,pNumerics)
 
 Create the N,S submatrices of the Hamiltonian, solve it and return the Eigenvalues and Vectors in a List
 """
 function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
-                  Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
-                  mu::Float64,
-                  fockstates::Fockstates,
-                  lenEvecs::Int64,
-                  pNumerics::NumericalParameters)
-   evallist = zeros(Eigenvalue,fockstates.Nstates) 
-   eveclist = zeros(EigenvectorElem,lenEvecs)      
+                        Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
+                        mu::Float64,
+                        fockstates::Fockstates,
+                        pNumerics::NumericalParameters)
+   Nmax = fockstates.norb*2
 
-   Nmax = fockstates.Nmax
-   ii_evals = 1
-   ii_evecs = 1
+   evallist = [ [] for n=0:Nmax]
+   eveclist = [ [] for n=0:Nmax]
+
    for n=0:Nmax
       for s=1:noSpinConfig(n,Nmax)
-         dim = fockstates.nstatesNS[n+1,s]
+         dim = length(fockstates.states[n+1][s])
          print("Constructing Hamiltonian(",dim,"x",dim,"), N=",n,", S=",spinConfig(s,n,Nmax),"... ")
 
          # now get the Hamiltonian submatrix spanned by all states <i| |j> in the N,S space (sparse matrix)
-         hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,fockstates[n,s,:],pNumerics)
+         hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,fockstates.states[n+1][s],pNumerics)
          println("Done!")
 
          #if (n==8 && spinConfig(s,n,Nmax)==0)
@@ -446,16 +437,9 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
          evals,evecs = getEvalEvecs(hamiltonian)
          
          # save the pairs of eigvals and eigvecs, also the N,S quantum numbers
-         for i=1:length(evals)
-            evallist[ii_evals] = evals[i]
-            ii_evals += 1
-
-            eveclist[ii_evecs:ii_evecs+dim-1] = copy(evecs[:,i])
-            ii_evecs += dim
-         end
+         push!( evallist[n+1], evals )
+         push!( eveclist[n+1], [evecs[:,i] for i=1:length(evals)] )
          println("Done!")
-   
-         
       end # s
    end # n
    return evallist,eveclist
@@ -467,7 +451,7 @@ end
 
 Calculate partition function from the eigenvalues in `evallist`.
 """
-function getZ(evals::Array{Eigenvalue,1}, beta::Float64)
-   E0 = minimum(evals)
-   return sum( exp.(-beta.*( evals .-E0)) )  # subtract E0 to avoid overflow
+function getZ(eigenspace::Eigenspace, beta::Float64)
+   evals = [ e for nse in eigenspace.evals for se in nse for e in se  ]
+   return sum( exp.( -beta .*( evals .- eigenspace.E0) ) )
 end

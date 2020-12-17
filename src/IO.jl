@@ -82,13 +82,12 @@ end
 
 Write all states and N S quantum numbers
 """
-function writeStateInfo(io::IO, allstates::NSstates)
+function writeStateInfo(io::IO, fockstates::Fockstates)
    println(io, "We have the following states:")
-   Nmax = getNmaxFromAllstates(allstates)
-   for n=0:Nmax
+   for n=0:fockstates.norb*2
       for s=1:noSpinConfig(n,Nmax)
          println(io, "N=",n,", S=",spinConfig(s,n,Nmax))
-         for state in allstates[n+1][s]
+         for state in fockstates.states[n+1][s]
             println(io, state)
          end
       end
@@ -102,27 +101,28 @@ Write the Eigenvalues and some info
 """
 function writeEvalInfo(io::IO, eigenspace::Eigenspace,
                                fockstates::Fockstates)
-   Nmax = fockstates.Nmax
+   Nmax = fockstates.norb*2
    Nstates = eigenspace.Nstates
-   E0 = minimum(eigenspace.evals)
-   perm = sortperm(eigenspace.evals) # sort by Eigenenergy
+   evallist = [ [eigenspace.evals[n+1][s][i],n,s] for n=0:Nmax for s=1:noSpinConfig(n,Nmax) for i=1:length(eigenspace.evals[n+1][s])  ]
+   eveclist = [ e for nse in eigenspace.evecs for se in nse for e in se  ]
+   perm = sortperm( evallist ) # sort by Eigenenergy
 
    printlimit = round(Int64,min(10, Nstates/2))
 
    println(io, "Eigenstates: (",printlimit," lowest and highest)")
    for i=vcat(1:printlimit, Nstates-printlimit+1:Nstates)
-      E,evstate = eigenspace[perm[i]]
-      E -= E0
-      N = eigenspace.Nel[perm[i]]
-      S = eigenspace.Spin[perm[i]]
-      is = indexSpinConfig(S,N,Nmax)
+      E = evallist[perm[i]][1] - eigenspace.E0
+      evstate = eveclist[perm[i]]
+      N = Int64(evallist[perm[i]][2])
+      is = Int64(evallist[perm[i]][3])
+      S = spinConfig(is,N,Nmax)
 
       permV = sortperm( evstate, by=abs, rev=true )
       @printf(io, "E=%+10.5f, N=%3i, S=%+3i : ", E,N,S)
       # print the three largest contributions to the Eigenvector
       for j=1:min(2,length(evstate))
          @printf(io,  "%4.2f", abs(evstate[permV[j]])^2 ) 
-         print(io, "x",fockstates[N,is,permV[j]],"  ")
+         print(io, "x",fockstates.states[N+1][is][permV[j]],"  ")
       end
       println(io, " ")
       (i==printlimit) && println(io, ".\n.\n.")

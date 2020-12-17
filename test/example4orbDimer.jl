@@ -28,7 +28,7 @@ using Random
    # Main part of the Program ############################################
    #######################################################################
   
-   eps = zeros(Float64,fockstates.Nmax)
+   eps = zeros(Float64,fockstates.norb*2)
    for i=0:fockstates.norb-1              # Just shift one orbital down, the other up by +-1
       eps[2*i+1] = 1.0*(-1)^i    # up spin
       eps[2*i+2] = eps[2*i+1]    #dn spin
@@ -53,15 +53,14 @@ using Random
 
    eigenspace = sfED.Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
 
-   transitions1pGF = sfED.getPossibleTransitions(eigenspace,fockstates,pSimulation.gf_flav,pSimulation.beta,pNumerics,1)   # contains list of possible transitions, E1,E2 and the overlap elements
+   transitions1pGF = sfED.get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions, E1,E2 and the overlap elements
 
-   gf_w, gf_iw = sfED.getGF(transitions1pGF,sfED.getZ(eigenspace.evals,pSimulation.beta),pSimulation,pFreq,pNumerics)
+   gf_w, gf_iw = sfED.getGF(transitions1pGF,sfED.getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
    sigma_w    = sfED.getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = sfED.getSigma(gf0_iw,gf_iw)
   
   #################################
-  E0 = minimum(eigenspace.evals)
-  @test E0≈-13.084236
+  @test eigenspace.E0≈-13.084236
   @test gf_w[1,1,1]≈-2.7259717-0.57595420*im
   @test gf0_w[1,1,1]≈0.29096091-im*2.5399411e-03
   @test sigma_w[1,1,1]≈3.7877913-im*4.4195615E-02

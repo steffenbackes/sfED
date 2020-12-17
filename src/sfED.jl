@@ -3,7 +3,6 @@ __precompile__(false)
 
 export example_run, noSpinConfig
 
-using Arpack
 using LinearAlgebra
 using SparseArrays
 using Printf
@@ -13,6 +12,7 @@ include("params.jl")
 include("states.jl")
 include("hamiltonian.jl")
 include("IO.jl")
+include("transitions.jl")
 include("greensfunction.jl")
 
 function example_run()
@@ -23,8 +23,8 @@ function example_run()
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
    beta = 40.0
-   gf_flav = [1,5]
-   #gf_flav = [2*m-1 for m in 1:norb]
+   #gf_flav = [1,5]
+   gf_flav = [2*m-1 for m in 1:norb]
 
    pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
    pFreq = FrequencyMeshes(nw=501,
@@ -34,10 +34,10 @@ function example_run()
 
    pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6)
 
-   # generate all the states
    fockstates = Fockstates(norb=norb)
+   #writeStateInfo(fockstates)
 
-   println( "We have $(fockstates.norb) Orbitals, #$(fockstates.Nstates) states and $(fockstates.Nmax) max. number of electrons" )
+   println( "We have $(fockstates.norb) Orbitals, #$(fockstates.Nstates) states and $(fockstates.norb*2) max. number of electrons" )
    
    #######################################################################
    # Main part of the Program ############################################
@@ -53,12 +53,9 @@ function example_run()
    writeGF("gf0_w.dat",gf0_w,pFreq.wf)
    writeGF("gf0_iw.dat",gf0_iw, pFreq.iwf )
    
-   #writeStateInfo(allstates)
-   
    eigenspace = Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
-   
-   println("Groundstate energy E0=", minimum( eigenspace.evals  ) )
-   println("Partition function Z=",getZ(eigenspace.evals,pSimulation.beta) )
+   println("Groundstate energy E0=", eigenspace.E0 )
+   println("Partition function Z=",getZ(eigenspace,pSimulation.beta) )
    writeEvalInfo(eigenspace,fockstates)
 
    println("Determining overlaps between eigenvectors...")
@@ -66,8 +63,7 @@ function example_run()
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
 
    println("Create interacting single-particle Green's function...")
-   gf_w, gf_iw = getGF(transitions1pGF,getZ(eigenspace.evals,pSimulation.beta),pSimulation,pFreq,pNumerics)
-   gf_w, gf_iw = @time getGF(transitions1pGF,getZ(eigenspace.evals,pSimulation.beta),pSimulation,pFreq,pNumerics)
+   gf_w, gf_iw = getGF(transitions1pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
 
    sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = getSigma(gf0_iw,gf_iw)

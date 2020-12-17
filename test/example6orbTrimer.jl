@@ -26,7 +26,7 @@ using Random
    # Main part of the Program ############################################
    #######################################################################
   
-   eps = zeros(Float64,fockstates.Nmax)
+   eps = zeros(Float64,fockstates.norb*2)
    for i=0:fockstates.norb-1              # Just shift one orbital down, the other up by +-1
       eps[2*i+1] = 0.0*(-1)^i    # up spin
       eps[2*i+2] = eps[2*i+1]    #dn spin
@@ -58,16 +58,15 @@ using Random
 
    eigenspace = sfED.Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
 
-   transitions1pGF = sfED.getPossibleTransitions(eigenspace,fockstates,pSimulation.gf_flav,pSimulation.beta,pNumerics,1)   # contains list of possible transitions, E1,E2 and the overlap elements
+   transitions1pGF = sfED.get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions, E1,E2 and the overlap elements
 
-   gf_w, gf_iw = sfED.getGF(transitions1pGF,sfED.getZ(eigenspace.evals,pSimulation.beta),pSimulation,pFreq,pNumerics)
+   gf_w, gf_iw = sfED.getGF(transitions1pGF,sfED.getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
    sigma_w    = sfED.getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = sfED.getSigma(gf0_iw,gf_iw)
   
   #################################
-  E0 = minimum(eigenspace.evals)
-  @test E0≈-11.970696
-#  @test sfED.getZ(evallist,beta)≈3.999466 too sensitive to small numerical noise
+  @test eigenspace.E0≈-11.970696
+#  @test sfED.getZ(eigenspace,beta)≈3.999466 too sensitive to small numerical noise
   @test gf_w[1,1,1]≈1.4431592-im*1.0092759
   @test gf_w[1,2,1]≈3.3990114-im*1.7905190
   @test gf0_w[1,1,1]≈0.016925674-0.029998865*im
