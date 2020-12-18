@@ -1,38 +1,6 @@
 #typedefs
-const CAmatrix    = SparseMatrixCSC{Int8,Int64}   # matrix type for creation/annihilation matrix
-const Hamiltonian = SparseMatrixCSC{Complex{Float32},Int64}   # matrix type for Hamiltonian matrix
-
-const FockElement = Int8                                  # one number element of a Fock state
-const Fockstate   = Array{FockElement,1}                  # The standard Fock state e.g. [00101011] 
-const NSstates    = Array{Array{Array{Fockstate,1},1},1}  # An array of arrays for all Fock states for Quantum numbers N,S: typeof( allstates[N][S][i] )=Fockstate
-
-const Eigenvalue        = Float32             
-const EigenvectorElem   = Complex{Float32}
-const Eigenvector       = Array{EigenvectorElem,1}
-const EigenvectorMatrix = Array{EigenvectorElem,2}
-
 const FrequencyMesh     = Array{Float32,1}
 const FrequencyMeshCplx = Array{Complex{Float32},1}
-const SingleParticleFunction = Array{Complex{Float32},3}
-const TwoParticleFunction = Array{Complex{Float32},3}  # single orbital for now, depends on 3 frequencies
-
-#new objects ############################################
-struct Fockstates
-   Nstates    ::Int64
-   norb       ::Int64
-
-   states::NSstates   # states[n][s][i]  (electron number, spin index, i-th state in NS block)
-end
-
-struct Eigenspace
-   Nstates    ::Int64 
-   norb       ::Int64
-   E0         ::Eigenvalue
-
-   evals::Array{Array{Array{Eigenvalue,1},1},1}       # n,s,i
-   evecs::Array{Array{Array{Eigenvector,1},1},1}      # n,s,i
-end
-
 
 # parameter structs #####################################################
 
@@ -54,10 +22,6 @@ struct NumericalParameters
 
    NumericalParameters(;delta,cutoff) = new(delta,cutoff)
 end
-
-# Outer Constructor for FrequencyMeshes
-# init wf with equidistant real frequency grid
-# init iwf with matsubaragrid [0,iwmax] and determine number of freq. such that we reach iwmax 
 
 struct FrequencyMeshes
    # Real frequency mesh

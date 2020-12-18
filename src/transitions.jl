@@ -1,4 +1,3 @@
-
 struct Transition
    iFromTo   ::Array{Int64,1}    # [index_from, index_to]
    sFromTo   ::Array{Int64,1}    # spin-index from-to
@@ -7,10 +6,10 @@ struct Transition
 end
 
 struct Transitions
-   transitions::Array{Array{Array{Transition,1},1},1}       # n,s,i
+   transitions::Array{Array{Array{Transition,1},1},1}       # n,s,i from
 end
 
-
+## Main functions & constructors ###############################################
 """
     getPossibleTransitions(eigenspace,fockstates,flavors,pNumerics,expCutoff)
 
@@ -46,13 +45,7 @@ function Transitions(flavor::Int64,
          s2 = indexSpinConfig(S2,n2,Nmax)               # this function returns -1 if state n2,S2 does not exist
 
          if s2>0
-            # get the Cmatrix
-            cmat = sparse([1],[1],[1])
-				if flavor>0
-	            cmat = getCdagmatrix(abs(flavor), fockstates.states[n2+1][s2], fockstates.states[n1+1][s1])
-            else
-	            cmat = getCmatrix(abs(flavor), fockstates.states[n2+1][s2], fockstates.states[n1+1][s1])
-            end
+            cmat = getCCdaggerMat(flavor,fockstates.states[n2+1][s2], fockstates.states[n1+1][s1])
 
             for i=1:length(eigenspace.evals[n1+1][s1])                # now loop over the |1> subspace
                Efrom = eigenspace.evals[n1+1][s1][i] - E0

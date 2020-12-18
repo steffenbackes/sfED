@@ -1,3 +1,4 @@
+const Hamiltonian = SparseMatrixCSC{Complex{Float32},Int64}   # matrix type for Hamiltonian matrix
 
 """
     getEps(pNumerics,pModel)
@@ -361,9 +362,7 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
       Hiitmp += getUdensity(states[i],Umatrix,Jmatrix,pNumerics)
    
       # Now we can set the matrix element
-      push!( HamiltonianElementsI, i )
-      push!( HamiltonianElementsJ, i )
-      push!( HamiltonianElementsV, Hiitmp )
+      push!( HamiltonianElementsI, i ); push!( HamiltonianElementsJ, i ); push!( HamiltonianElementsV, Hiitmp )
    
       # now offdiagonals
       for j=i+1:length(states)
@@ -376,13 +375,8 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
          Hijtmp += getUnondensity(states[i], states[j], Jmatrix,pNumerics)
    
          # Now we can set the matrix element
-         push!( HamiltonianElementsI, i )
-         push!( HamiltonianElementsJ, j )
-         push!( HamiltonianElementsV, Hijtmp )
-   
-         push!( HamiltonianElementsI, j )     # the hermitian conjugate elements
-         push!( HamiltonianElementsJ, i )
-         push!( HamiltonianElementsV, Hijtmp )
+         push!( HamiltonianElementsI, i ); push!( HamiltonianElementsJ, j ); push!( HamiltonianElementsV, Hijtmp )
+         push!( HamiltonianElementsI, j ); push!( HamiltonianElementsJ, i ); push!( HamiltonianElementsV, Hijtmp ) # hermitian conjugate
                         
       end # j ket
    end # i bra
@@ -428,15 +422,11 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
          hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,fockstates.states[n+1][s],pNumerics)
          println("Done!")
 
-         #if (n==8 && spinConfig(s,n,Nmax)==0)
-         #  writeMatrixGnuplot("hamil.dat",Matrix(hamiltonian))
-         #  exit()
-         #end
+         # (n==8 && spinConfig(s,n,Nmax)==0) && (writeMatrixGnuplot("hamil.dat",Matrix(hamiltonian));  exit())
    
          print("Diagonalizing Hamiltonian... ")
          evals,evecs = getEvalEvecs(hamiltonian)
          
-         # save the pairs of eigvals and eigvecs, also the N,S quantum numbers
          push!( evallist[n+1], evals )
          push!( eveclist[n+1], [evecs[:,i] for i=1:length(evals)] )
          println("Done!")

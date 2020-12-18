@@ -1,3 +1,8 @@
+const SingleParticleFunction = Array{Complex{Float32},3}
+const TwoParticleFunction = Array{Complex{Float32},3}  # single orbital for now, depends on 3 frequencies
+
+
+########################################################################
 """
     getG0(eps, tmatrix, w)
 
@@ -28,81 +33,6 @@ function getG0(        eps::Array{Float64,1},
    return gf0
 end
 ########################################################################
-
-
-"""
-    getCmatrix(anni::Int64,subspace1, subspace2)
-
-Generate the matrix for the annihilation operator acting on the subspace with N,S quantum number
-we act `subspace1` * c * `subspace2`
-`subspace 2` has all basis states with N,S
-`subspace 1` has all basis states with N-1,S-dS
-now just determine the transformation when acting the annihilation operator `anni` on it
-`anni` is the orbital/spin index
-"""
-function getCmatrix(     anni::Int64, 
-                       subspace1::Array{Fockstate,1}, 
-                       subspace2::Array{Fockstate,1})::CAmatrix
-   dim1 = length(subspace1)
-   dim2 = length(subspace2)
-   indexI = Int64[]
-   indexJ = Int64[]
-   val = Int64[]
-   # now annihilate the particle in all basis states in subspace2 and find the corresponding state in subspace1
-   for j=1:dim2
-      if subspace2[j][anni] == 1   # if there is one particle to annihilate...
-         state = copy( subspace2[j] )
-         c1sgn = getCsign(anni,state) # count the particles before anni
-         state[anni] = 0
-
-         #println("Find ",state," in list of ",subspace1)
-         # now find this state in the subspace1
-         i = findfirst(map(x-> all(x .== state), subspace1))
-         push!(indexI,i)
-         push!(indexJ,j)
-         push!(val,c1sgn)
-      end
-   end # j
-   return sparse(indexI,indexJ,val, dim1,dim2)
-end
-
-"""
-    getCdagmatrix(crea,subspace1,subspace2)
-
-Generate the matrix for the creation operator acting on the subspace with N-1,S-1 quantum numbers
-we act `subspace1` * cdag * `subspace2`
-`subspace 2` has all basis states with N-1,S-1 because we have previously annihilated one up electron
-`subspace 1` has all basis states with N,S
-now just determine the transformation when acting the creation operator `crea` on it
-`crea` is the orbital/spin index
-"""
-function getCdagmatrix(     crea::Int64, 
-                       subspace1::Array{Fockstate,1}, 
-                       subspace2::Array{Fockstate,1})::CAmatrix
-   dim1 = length(subspace1)
-   dim2 = length(subspace2)
-   indexI = Int64[]
-   indexJ = Int64[]
-   val = Int64[]
-
-   # now create the particle in all basis states and find the corresponding state in the N,S space
-   for j=1:dim2
-      if subspace2[j][crea] == 0   # if there is space to create one particle...
-         state = copy( subspace2[j] )
-         c1sgn = getCsign(crea,state) # count the particles before crea
-         state[crea] = 1
-
-         #println("Find ",state," in list of ",subspace1)
-         # now find this state in the N,S subspace
-         i = findfirst(map(x-> all(x .== state), subspace1))
-         push!(indexI,i)
-         push!(indexJ,j)
-         push!(val,c1sgn)
-      end
-   end # j
-   return sparse(indexI,indexJ,val, dim1,dim2)
-end
-#######################################################################
 
 
 """
@@ -145,15 +75,13 @@ function getGF(transitions::Array{Transitions,1},   # two for each flavor
             for i=1:length(transitions[2*b-1].transitions[n1+1][s1])
                trans2cdagb1 = transitions[2*b-1].transitions[n1+1][s1][i]
                overlapb = trans2cdagb1.overlap
-               ifrom = trans2cdagb1.iFromTo[1]
-               ito = trans2cdagb1.iFromTo[2]
+               ifrom,ito = trans2cdagb1.iFromTo[1:2]
+               Efrom,Eto = trans2cdagb1.EvalFromTo[1:2]
                n2 = n1+1
                s2 = trans2cdagb1.sFromTo[2]
-               Efrom = trans2cdagb1.EvalFromTo[1]
-               Eto = trans2cdagb1.EvalFromTo[2]
 
                for a=1:b # only upper triangular part
-                  # the transition <1|c_a|2> is completely fixed by knowing <2|c^dag_b|1>, just look upo the overlap if there exists one
+                  # the transition <1|c_a|2> is completely fixed by knowing <2|c^dag_b|1>, just look up the overlap if there exists one
                   for it in findall(x->(x.iFromTo==[ito,ifrom]), transitions[2*a-0].transitions[n2+1][s2] )
 
                      ovrlp = (exp(-beta*Efrom)+exp(-beta*Eto))*transitions[2*a-0].transitions[n2+1][s2][it].overlap*overlapb      # <n1|c_a|n2> * <n2|cdag_b|n1>
@@ -586,64 +514,7 @@ function getGF2part( evallist::Array{Array{Eigenvalue,1},1},
    return gf,evalContributions
 end 
 
-################################################################################################################
-#""" BUGGY AND SLOWER !
-#    getN2Transitions(flavor,eigenspace,fockstates,pNumerics,expCutoff)
-#
-#Determine 
-#"""
-#function getN2Transitions(n1::Int64,s1::Int64,flavor::Int64,
-#                          eigenspace::Eigenspace,
-#                          fockstates::Fockstates,
-#                          beta::Float64,
-#                          pNumerics::NumericalParameters,
-#                          expCutoff::Int64)
-#   Nmax = fockstates.Nmax
-#   E0 = minimum(eigenspace.evals)
-#
-#   transitions = Transition[]
-#
-#   # if flavor is positive, calculate c^dagger, if negative calculate c
-#   S1 = eigenspace.SpinNS[n1+1,s1] # spin S in this subspace
-#   dS = 2*(abs(flavor)%2)-1
-#   n2 = n1+sign(flavor)
-#   S2 = S1+dS*sign(flavor)
-#
-#   n2states = nstatesNS(fockstates,n2,S2) # are there any states in the new subspace?
-#
-#   cmat = sparse([1],[1],[1])
-#   if n2states>0
-#      s2 = indexSpinConfig(S2,n2,Nmax)       # this works because we checked this subspace exists
-#      if flavor<0
-#         cmat = getCmatrix(abs(flavor), fockstates[n2,s2,:], fockstates[n1,s1,:])
-#      else
-#         cmat = getCdagmatrix(abs(flavor), fockstates[n2,s2,:], fockstates[n1,s1,:])
-#      end
-#
-#      for i=1:eigenspace.dimNS[n1+1,s1] # now loop over the |1> subspace
-#         E1,evec1 = eigenspace[n1,s1,i]
-#         E1-=E0
-#
-#         for j=1:eigenspace.dimNS[n2+1,s2] # and loop over the <2| subspace
-#            E2,evec2 = eigenspace[n2,s2,j]
-#            E2-=E0
-#
-#            if expCutoff==0 || (exp(-beta*E1)+exp(-beta*E2))>pNumerics.cutoff
-#               ovrlp = dot( evec2, cmat * evec1 )
-#               if abs(ovrlp) > pNumerics.cutoff
-#                  index1 = eigenspace.startNSeval[n1+1,s1,i]
-#                  index2 = eigenspace.startNSeval[n2+1,s2,j]
-#                  push!( transitions, Transition(index1,index2,E1,E2,ovrlp) )
-#               end
-#            end # exp cutoff if needed
-#         end # j states <2|
-#      end # i states |1>
-#   end # n2states >0
-#
-#   return transitions
-#end
-
-#########################################################################################
+#######################################################################
 
 """
     getSigma(G0, G)

@@ -1,3 +1,27 @@
+const FockElement = Int8                                  # one number element of a Fock state
+const Fockstate   = Array{FockElement,1}                  # The standard Fock state e.g. [00101011] 
+const NSstates    = Array{Array{Array{Fockstate,1},1},1}  # An array of arrays for all Fock states for Quantum numbers N,S: typeof( allstates[N][S][i] )=Fockstate
+
+const Eigenvalue        = Float32             
+const EigenvectorElem   = Complex{Float32}
+const Eigenvector       = Array{EigenvectorElem,1}
+const EigenvectorMatrix = Array{EigenvectorElem,2}
+
+struct Fockstates
+   Nstates    ::Int64
+   norb       ::Int64
+
+   states::NSstates   # states[n][s][i]  (electron number, spin index, i-th state in NS block)
+end
+
+struct Eigenspace
+   Nstates    ::Int64 
+   norb       ::Int64
+   E0         ::Eigenvalue
+
+   evals::Array{Array{Array{Eigenvalue,1},1},1}       # n,s,i
+   evecs::Array{Array{Array{Eigenvector,1},1},1}      # n,s,i
+end
 
 # ============================ Comments ============================
 #   

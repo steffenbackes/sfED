@@ -11,9 +11,10 @@ using Random
 include("params.jl")
 include("states.jl")
 include("hamiltonian.jl")
-include("IO.jl")
+include("ccdagger.jl")
 include("transitions.jl")
 include("greensfunction.jl")
+include("IO.jl")
 
 function example_run()
    norb = 6
@@ -60,10 +61,12 @@ function example_run()
 
    println("Determining overlaps between eigenvectors...")
    transitions1pGF = get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
+   transitions1pGF = @time get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
 
    println("Create interacting single-particle Green's function...")
    gf_w, gf_iw = getGF(transitions1pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
+   gf_w, gf_iw = @time getGF(transitions1pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
 
    sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = getSigma(gf0_iw,gf_iw)
