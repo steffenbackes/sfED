@@ -73,9 +73,6 @@ function get1pGFTransitions(flavors::Array{Int64,1},
                      fockstates::Fockstates,
                      beta::Float64,
                      pNumerics::NumericalParameters)
-	# if flavor>0 we calculate c^dagger
-	# if flavor<0 we calculate c
-
    # we return c^dagger and c for all flavors
    transitions = Transitions[]
    for m in flavors
@@ -84,6 +81,20 @@ function get1pGFTransitions(flavors::Array{Int64,1},
    end
    return transitions
 end
-
-
 #################
+
+function get2pGFTransitions(flavor::Int64,
+                            eigenspace::Eigenspace,
+                            fockstates::Fockstates,
+                            beta::Float64,
+                            pNumerics::NumericalParameters)
+
+   # we return c^dagger_up, c_up, d^dagger_dn and c_dn for the given flavor, no Boltzmann cutoff
+   transitions = Transitions[]
+   push!( transitions, Transitions( flavor  ,eigenspace,fockstates,beta,pNumerics,0) ) #c^dagger up
+   push!( transitions, Transitions(-flavor  ,eigenspace,fockstates,beta,pNumerics,0) ) # c up
+   push!( transitions, Transitions( flavor+1,eigenspace,fockstates,beta,pNumerics,0) ) #c^dagger dn
+   push!( transitions, Transitions(-flavor-1,eigenspace,fockstates,beta,pNumerics,0) ) # c dn
+   return transitions
+end
+

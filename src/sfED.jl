@@ -59,7 +59,7 @@ function example_run()
    println("Partition function Z=",getZ(eigenspace,pSimulation.beta) )
    writeEvalInfo(eigenspace,fockstates)
 
-   println("Determining overlaps between eigenvectors...")
+   println("Determining overlaps between eigenvectors for 1partGF...")
    transitions1pGF = get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
    transitions1pGF = @time get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
@@ -78,9 +78,13 @@ function example_run()
 #   writeEvalContributionsSectors("evalContributionsSectors.dat", evalContributions)
 #   writeEvalContributions("evalContributions.dat", evalContributions)
 
-#  println("Create interacting two-particle Green's function...")
-#  gf2part,evalContributions = getGF2part(evallist,eveclist,allstates,NSperm,pModel,pSimulation,pFreq,pNumerics)
-#  writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
+#   println("Determining overlaps between eigenvectors for 2partGF...")
+#   transitions2pGF = get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
+#   transitions2pGF = @time get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
+#   println("Create interacting two-particle Green's function...")
+#   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
+#   gf2part = @time getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
+#   writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
 #  writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
 
