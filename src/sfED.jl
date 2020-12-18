@@ -17,7 +17,7 @@ include("greensfunction.jl")
 include("IO.jl")
 
 function example_run()
-   norb = 6
+   norb = 4
    U = 3.0
    J = 0.3
    Up = U-2*J
@@ -78,13 +78,13 @@ function example_run()
 #   writeEvalContributionsSectors("evalContributionsSectors.dat", evalContributions)
 #   writeEvalContributions("evalContributions.dat", evalContributions)
 
-#   println("Determining overlaps between eigenvectors for 2partGF...")
-#   transitions2pGF = get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
-#   transitions2pGF = @time get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
-#   println("Create interacting two-particle Green's function...")
-#   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
-#   gf2part = @time getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
-#   writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
+   println("Determining overlaps between eigenvectors for 2partGF...")
+   transitions2pGF = get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
+   transitions2pGF = @time get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
+   println("Create interacting two-particle Green's function...")
+   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,5,pNumerics)
+   gf2part = @time getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,5,pNumerics)
+   writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
 #  writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
 

@@ -24,9 +24,9 @@ function getEps(fockstates::Fockstates, pNumerics::NumericalParameters)
    end
 
    # add a very small random term to each local level to lift degeneracy and improve numerical stability
-   for i=1:length(eps)
-      eps[i] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
-   end
+#   for i=1:length(eps)
+#      eps[i] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
+#   end
    return eps
 end
 

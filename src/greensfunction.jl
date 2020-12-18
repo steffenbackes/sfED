@@ -125,16 +125,95 @@ function getGF(transitions::Array{Transitions,1},   # two for each flavor
 end 
 #########################################################################################
 """
-    getFuckingLarge2partTerm(w1,w2,w3,Em,En,Eo,Ep,beta)
+    getFuckingLarge2partTerm(w1,w2,w3,Em,En,Eo,Ep)
 Evaluate the Lehmann term for the 2part Green's function
 """
 function getFuckingLarge2partTerm(w1::Float32,w2::Float32,w3::Float32,
                                   Em::Eigenvalue,En::Eigenvalue,Eo::Eigenvalue,Ep::Eigenvalue,
-                                  expEop::Float32,expEnp::Float32,expEmp::Float32)::Complex{Float64}
+                                  expEop::Float32,expEnp::Float32,expEmp::Float32)::Complex{Float32}
 
    return (  ( expEop/(im*w3+Eo-Ep) + expEnp/(im*w2+im*w3+En-Ep) )/(im*w2+En-Eo)  
             -( expEop/(im*w3+Eo-Ep) - expEmp/(im*w1+(im*w2+im*w3+Em-Ep)) )/(im*w1+(im*w2+Em-Eo))
           )/( im*w1+(Em-En) )
+end
+
+#####################################################
+
+"""
+    getGF2partTerm(transitions,pFreq, pNumerics)
+Evaluate one of the six terms for the GF, the only difference is where to read out
+the overlaps and the permutation of the frequencies
+"""
+function getGF2partTerm(transitionNtoM::Transitions,
+                        transitionOtoN::Transitions,
+                        transitionPtoO::Transitions,
+                        transitionMtoP::Transitions,
+                        pFreq::FrequencyMeshes, nw::Int64,
+                        wperm::Array{Int64,1},
+                        pNumerics::NumericalParameters)::Tuple{TwoParticleFunction, Float32 }
+
+   gfnorm::Float32 = 0.0
+   gfterm = zeros(Complex{Float32},nw,nw,nw)
+   Nmax=length(transitionMtoP.transitions)-1
+
+   for nm=0:Nmax
+      for sm=1:noSpinConfig(nm,Nmax)
+
+         for transMtoP in transitionMtoP.transitions[nm+1][sm]
+            mstate = transMtoP.iFromTo[1]
+            Em,Ep = transMtoP.EvalFromTo[1:2]
+            expEmp = sum(transMtoP.ExpFromTo[1:2])
+            np = transMtoP.nFromTo[2]
+            sp = transMtoP.sFromTo[2]
+            pstate = transMtoP.iFromTo[2]
+      
+            # now pick out the <o|c|p> transitions that have p=pstate
+            itransPO = findall(x->(x.iFromTo[1]==pstate), transitionPtoO.transitions[np+1][sp] )
+            for transPtoO in transitionPtoO.transitions[np+1][sp][itransPO]
+               Eo = transPtoO.EvalFromTo[2]
+               expEop = sum(transPtoO.ExpFromTo[1:2])
+               no = transPtoO.nFromTo[2]
+               so = transPtoO.sFromTo[2]
+               ostate = transPtoO.iFromTo[2]
+      
+               # now pick out the <n|c|o> transitions that have o=ostate
+               itransON = findall(x->(x.iFromTo[1]==ostate), transitionOtoN.transitions[no+1][so] )
+               for transOtoN in transitionOtoN.transitions[no+1][so][itransON]
+                  En = transOtoN.EvalFromTo[2]
+                  expEnp = transOtoN.ExpFromTo[2] - transPtoO.ExpFromTo[1]
+                  nn = transOtoN.nFromTo[2]
+                  sn = transOtoN.sFromTo[2]
+                  nstate = transOtoN.iFromTo[2]
+      
+                  # Apply exp cutoff
+                  if expEop + expEnp + expEmp > pNumerics.cutoff
+      
+                     # now pick out the <m|c|n> transitions that have n=nstate AND m=mstate since we need to go back
+                     itransNM = findall(x->(x.iFromTo==[nstate,mstate]), transitionNtoM.transitions[nn+1][sn] )
+                     for transNtoM in transitionNtoM.transitions[nn+1][sn][itransNM]
+      
+                        overlap = transMtoP.overlap * transPtoO.overlap * transOtoN.overlap * transNtoM.overlap
+                        gfnorm += real(overlap)
+                        for n1=1:nw
+                           for n2=1:nw
+                              for n3=1:nw
+                                 w = [ pFreq.iwf[n1], pFreq.iwf[n2], pFreq.iwf[n3] ]
+                                 gfterm[n1,n2,n3] += overlap*getFuckingLarge2partTerm(w[wperm[1]],w[wperm[2]],w[wperm[3]],
+                                                                                      Em,En,Eo,Ep,
+                                                                                      expEop,expEnp,expEmp)
+                              end # n3
+                           end # n2
+                        end # n1
+      
+                     end # n->m
+                  end # exp cutoff
+               end # o->n
+            end # p->o
+         end # m->p
+
+      end # sm
+   end # nm
+   return gfterm, gfnorm
 end
 
 ###############################################################################################
@@ -147,19 +226,11 @@ We choose the definition G^(2)_up,dn = <T c^dag_up(t1) c_up(t2) c^dag_dn(t3) c_d
 """
 function getGF2part(transitions::Array{Transitions,1},   # two for each flavor
                     Z::Float64,
-                    pSimulation::SimulationParameters,
-                    pFreq::FrequencyMeshes,
+                    pFreq::FrequencyMeshes,nw::Int64,
                     pNumerics::NumericalParameters)::TwoParticleFunction        #Tuple{TwoParticleFunction,Array{Float64,2}}
 
    # we restrict this calculation to one orbital !
-   Nmax=length(transitions[1].transitions)-1
-   beta = pSimulation.beta
-   nw = 5
    println("Generating the two-particle GF on ",nw,"^3 frequencies...")
-
-   gf::TwoParticleFunction  = zeros(nw,nw,nw)
-   gfnorm = 0.0
-
    #evalContributions = Array{Float64}(undef, (length(evallist), 4) ) REIMPLEMENT THIS ASAP
    ## prefill the evalContributions array
    #for m=1:length(evallist)
@@ -170,74 +241,17 @@ function getGF2part(transitions::Array{Transitions,1},   # two for each flavor
    #   evalContributions[m,:] = [Nm,Sm,Em,0.0]
    #end
 
-   # Now calculate the 2particle GF
-   # sum over |m>
-   for nm=1:Nmax
-      if nm%(max(1,round(Int64,Nmax/100.0))) == 0
-            print("\r"*lpad(round(Int64,nm*100.0/Nmax),4)*"%")
-      end
-      for sm=1:noSpinConfig(nm,Nmax)
-         # first term: cdag_up c_up cdag_dn c_dn ##################################################
-         for transMtoP in transitions[4].transitions[nm+1][sm]
-            mstate = transMtoP.iFromTo[1]
-            Em,Ep = transMtoP.EvalFromTo[1:2]
-            expEmp = exp(-beta*Em) + exp(-beta*Ep)
-            np = nm-1
-            sp = transMtoP.sFromTo[2]
-            pstate = transMtoP.iFromTo[2]
+   gf,gfnorm = .-getGF2partTerm(transitions[1],transitions[2],transitions[3],transitions[4],pFreq,nw,[1,2,3],pNumerics)
+               .+getGF2partTerm(transitions[2],transitions[1],transitions[3],transitions[4],pFreq,nw,[2,1,3],pNumerics)
+               .-getGF2partTerm(transitions[2],transitions[3],transitions[1],transitions[4],pFreq,nw,[2,3,1],pNumerics)
+               .+getGF2partTerm(transitions[3],transitions[2],transitions[1],transitions[4],pFreq,nw,[3,2,1],pNumerics)
+               .+getGF2partTerm(transitions[1],transitions[3],transitions[2],transitions[4],pFreq,nw,[1,3,2],pNumerics)
+               .-getGF2partTerm(transitions[3],transitions[1],transitions[2],transitions[4],pFreq,nw,[3,1,2],pNumerics)
 
-            # now pick out the <o|c|p> transitions that have p=pstate
-            itransPO = findall(x->(x.iFromTo[1]==pstate), transitions[3].transitions[np+1][sp] )
-            for transPtoO in transitions[4].transitions[nm+1][sm][itransPO]
-               Eo = transPtoO.EvalFromTo[2]
-               expEop = exp(-beta*transPtoO.EvalFromTo[1]) + exp(-beta*transPtoO.EvalFromTo[2])
-               no = np+1
-               so = transPtoO.sFromTo[2]
-               ostate = transPtoO.iFromTo[2]
-
-               # now pick out the <n|c|o> transitions that have o=ostate
-               itransON = findall(x->(x.iFromTo[1]==ostate), transitions[2].transitions[no+1][so] )
-               for transOtoN in transitions[2].transitions[no+1][so][itransON]
-                  En = transOtoN.EvalFromTo[2]
-                  expEnp = exp(-beta*En) + exp(-beta*Ep)
-                  nn = no-1
-                  sn = transOtoN.sFromTo[2]
-                  nstate = transOtoN.iFromTo[2]
-
-                  # Apply exp cutoff
-                  if expEop + expEnp + expEmp > pNumerics.cutoff
-
-                     # now pick out the <m|c|n> transitions that have n=nstate AND m=mstate since we need to go back
-                     itransNM = findall(x->(x.iFromTo==[nstate,mstate]), transitions[1].transitions[nn+1][sn] )
-                     for transNtoM in transitions[1].transitions[nn+1][sn][itransNM]
-
-                        overlap = transMtoP.overlap * transPtoO.overlap * transOtoN.overlap * transNtoM.overlap
-                        gfnorm += -real(overlap)
-                        for n1=1:nw
-                           for n2=1:nw
-                              for n3=1:nw
-                                 gf[w1,w2,w3] += overlap*getFuckingLarge2partTerm(pFreq.iwf[w1],pFreq.iwf[w2],pFreq.iwf[w3],
-                                                                                  Em,En,Eo,Ep,
-                                                                                  expEop,expEnp,expEmp)
-                              end # n3
-                           end # n2
-                        end # n1
-
-                     end # n->m
-                  end # exp cutoff
-               end # o->n
-            end # p->o
-         end # m->p
-      end # sm loop
-   end # nm loop
-    println("\rdone!")
-   
-   #normalize
+   println("\rdone!")
    gf ./= Z
    gfnorm /= Z
-
    @printf("2-particle Green's function normalized to %.3f \n",gfnorm)
-
    return gf
 end 
 
