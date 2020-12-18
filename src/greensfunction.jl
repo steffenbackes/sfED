@@ -148,14 +148,15 @@ function getGF2partTerm(transitionNtoM::Transitions,
                         transitionOtoN::Transitions,
                         transitionPtoO::Transitions,
                         transitionMtoP::Transitions,
-                        pFreq::FrequencyMeshes, nw::Int64,
-                        wperm::Array{Int64,1},
-                        pNumerics::NumericalParameters)::Tuple{TwoParticleFunction, Float32 }
+                        freqList,
+                        pNumerics::NumericalParameters)
 
    gfnorm::Float32 = 0.0
-   gfterm = zeros(Complex{Float32},nw,nw,nw)
+   gfterm = zeros(Complex{Float32},length(freqList))
    Nmax=length(transitionMtoP.transitions)-1
 
+
+   tracker::UInt128 = 0
    for nm=0:Nmax
       for sm=1:noSpinConfig(nm,Nmax)
 
@@ -194,16 +195,13 @@ function getGF2partTerm(transitionNtoM::Transitions,
       
                         overlap = transMtoP.overlap * transPtoO.overlap * transOtoN.overlap * transNtoM.overlap
                         gfnorm += real(overlap)
-                        for n1=1:nw
-                           for n2=1:nw
-                              for n3=1:nw
-                                 w = [ pFreq.iwf[n1], pFreq.iwf[n2], pFreq.iwf[n3] ]
-                                 gfterm[n1,n2,n3] += overlap*getFuckingLarge2partTerm(w[wperm[1]],w[wperm[2]],w[wperm[3]],
-                                                                                      Em,En,Eo,Ep,
-                                                                                      expEop,expEnp,expEmp)
-                              end # n3
-                           end # n2
-                        end # n1
+                        tracker += 1
+
+                        for (i,el) in enumerate(freqList)
+                            gfterm[i] += overlap*getFuckingLarge2partTerm(el[1],el[2],el[3],
+                                                                              Em,En,Eo,Ep,
+                                                                              expEop,expEnp,expEmp)
+                        end
       
                      end # n->m
                   end # exp cutoff
@@ -213,6 +211,7 @@ function getGF2partTerm(transitionNtoM::Transitions,
 
       end # sm
    end # nm
+   println("TRACKER:  ",tracker)
    return gfterm, gfnorm
 end
 
@@ -226,11 +225,12 @@ We choose the definition G^(2)_up,dn = <T c^dag_up(t1) c_up(t2) c^dag_dn(t3) c_d
 """
 function getGF2part(transitions::Array{Transitions,1},   # two for each flavor
                     Z::Float64,
-                    pFreq::FrequencyMeshes,nw::Int64,
-                    pNumerics::NumericalParameters)::TwoParticleFunction        #Tuple{TwoParticleFunction,Array{Float64,2}}
+                    freqList,
+                    pFreq,
+                    pNumerics::NumericalParameters)        #Tuple{TwoParticleFunction,Array{Float64,2}}
 
    # we restrict this calculation to one orbital !
-   println("Generating the two-particle GF on ",nw,"^3 frequencies...")
+   println("Generating the two-particle GF on ",length(freqList)," frequencies...")
    #evalContributions = Array{Float64}(undef, (length(evallist), 4) ) REIMPLEMENT THIS ASAP
    ## prefill the evalContributions array
    #for m=1:length(evallist)
@@ -240,13 +240,20 @@ function getGF2part(transitions::Array{Transitions,1},   # two for each flavor
    #   Sm    = spinConfig(sm,Nm,Nmax)
    #   evalContributions[m,:] = [Nm,Sm,Em,0.0]
    #end
+   nw2part=1
+    freqList123 = [ (pFreq.wf[i],pFreq.wf[j],pFreq.wf[k]) for i=1:nw2part, j=1:nw2part, k=1:nw2part ]
+    freqList213 = [ (pFreq.wf[j],pFreq.wf[i],pFreq.wf[k]) for i=1:nw2part, j=1:nw2part, k=1:nw2part ]
+    freqList231 = [ (pFreq.wf[j],pFreq.wf[k],pFreq.wf[i]) for i=1:nw2part, j=1:nw2part, k=1:nw2part ]
+    freqList321 = [ (pFreq.wf[k],pFreq.wf[j],pFreq.wf[i]) for i=1:nw2part, j=1:nw2part, k=1:nw2part ]
+    freqList132 = [ (pFreq.wf[i],pFreq.wf[k],pFreq.wf[j]) for i=1:nw2part, j=1:nw2part, k=1:nw2part ]
+    freqList312 = [ (pFreq.wf[k],pFreq.wf[i],pFreq.wf[j]) for i=1:nw2part, j=1:nw2part, k=1:nw2part ]
 
-   gf,gfnorm = .-getGF2partTerm(transitions[1],transitions[2],transitions[3],transitions[4],pFreq,nw,[1,2,3],pNumerics)
-               .+getGF2partTerm(transitions[2],transitions[1],transitions[3],transitions[4],pFreq,nw,[2,1,3],pNumerics)
-               .-getGF2partTerm(transitions[2],transitions[3],transitions[1],transitions[4],pFreq,nw,[2,3,1],pNumerics)
-               .+getGF2partTerm(transitions[3],transitions[2],transitions[1],transitions[4],pFreq,nw,[3,2,1],pNumerics)
-               .+getGF2partTerm(transitions[1],transitions[3],transitions[2],transitions[4],pFreq,nw,[1,3,2],pNumerics)
-               .-getGF2partTerm(transitions[3],transitions[1],transitions[2],transitions[4],pFreq,nw,[3,1,2],pNumerics)
+   gf,gfnorm = .-getGF2partTerm(transitions[1],transitions[2],transitions[3],transitions[4],freqList123,pNumerics)
+               .+getGF2partTerm(transitions[2],transitions[1],transitions[3],transitions[4],freqList213,pNumerics)
+               .-getGF2partTerm(transitions[2],transitions[3],transitions[1],transitions[4],freqList231,pNumerics)
+               .+getGF2partTerm(transitions[3],transitions[2],transitions[1],transitions[4],freqList321,pNumerics)
+               .+getGF2partTerm(transitions[1],transitions[3],transitions[2],transitions[4],freqList132,pNumerics)
+               .-getGF2partTerm(transitions[3],transitions[1],transitions[2],transitions[4],freqList312,pNumerics)
 
    println("\rdone!")
    gf ./= Z
