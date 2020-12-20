@@ -9,7 +9,7 @@ TODO: this should be overloaded to accept text file or command line inputs.
 function getEps(fockstates::Fockstates, pNumerics::NumericalParameters)
    eps = zeros(Float64,fockstates.norb*2)
    for i=0:fockstates.norb-1              # Just shift one orbital down, the other up by +-1
-      eps[2*i+1] = 1.0*(-1)^i    # up spin
+      eps[2*i+1] = 0.0*(-1)^i    # up spin
       eps[2*i+2] = eps[2*i+1]    #dn spin
    end
 
@@ -106,8 +106,8 @@ function getUJmatrix(fockstates::Fockstates,pSimulation::SimulationParameters)
    J = pSimulation.J
 
    if (fockstates.norb==1)
-      Umatrix = [U]
-      Jmatrix = [0]
+      Umatrix[1,1] = U
+      Jmatrix[1,1] = 0
    elseif (fockstates.norb==2)
       Umatrix = [U Up;
                  Up U]
@@ -353,8 +353,8 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
    for i=1:length(states)
       Hiitmp = 0.0
       # set the diagonals 
-      Hiitmp += -mu*sum(states[i])     # chemical potential
-      #Hiitmp += -mu*sum(states[i][1:2])     # chemical potential: this is when doing an AIM one-orbital calculation
+      #Hiitmp += -mu*sum(states[i])     # chemical potential
+      Hiitmp += -mu*sum(states[i][1:2])     # chemical potential: this is when doing an AIM one-orbital calculation
 
       Hiitmp += sum(eps .* states[i] ) # onsite levels
    

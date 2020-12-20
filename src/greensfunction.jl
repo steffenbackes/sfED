@@ -156,10 +156,21 @@ function getGF2partTerm(transitionNtoM::Transitions,
    gfterm = zeros(Complex{Float32},nw,nw,nw)
    Nmax=length(transitionMtoP.transitions)-1
 
+   counter::Int128 = 0
+   nst = sum([ length(transitionMtoP.transitions[nm+1][sm]) for nm=0:Nmax for sm=1:noSpinConfig(nm,Nmax)  ])
+   ii = 0
    for nm=0:Nmax
       for sm=1:noSpinConfig(nm,Nmax)
 
          for transMtoP in transitionMtoP.transitions[nm+1][sm]
+            if ii%(max(1,round(Int64,nst/100.0))) == 0
+               print("\r"*lpad(round(Int64,ii*100.0/nst),4)*" % ")
+               #println("COUNTER: ",counter)
+               flush(stdout)
+            end
+            ii += 1
+            
+
             mstate = transMtoP.iFromTo[1]
             Em,Ep = transMtoP.EvalFromTo[1:2]
             expEmp = sum(transMtoP.ExpFromTo[1:2])
@@ -168,8 +179,8 @@ function getGF2partTerm(transitionNtoM::Transitions,
             pstate = transMtoP.iFromTo[2]
       
             # now pick out the <o|c|p> transitions that have p=pstate
-            itransPO = findall(x->(x.iFromTo[1]==pstate), transitionPtoO.transitions[np+1][sp] )
-            for transPtoO in transitionPtoO.transitions[np+1][sp][itransPO]
+            PtoOlist = get( transitionPtoO.dictFrom[np+1][sp], pstate , (1:0) )
+            for transPtoO in transitionPtoO.transitions[np+1][sp][PtoOlist]
                Eo = transPtoO.EvalFromTo[2]
                expEop = sum(transPtoO.ExpFromTo[1:2])
                no = transPtoO.nFromTo[2]
@@ -177,8 +188,8 @@ function getGF2partTerm(transitionNtoM::Transitions,
                ostate = transPtoO.iFromTo[2]
       
                # now pick out the <n|c|o> transitions that have o=ostate
-               itransON = findall(x->(x.iFromTo[1]==ostate), transitionOtoN.transitions[no+1][so] )
-               for transOtoN in transitionOtoN.transitions[no+1][so][itransON]
+               OtoNlist = get( transitionOtoN.dictFrom[no+1][so], ostate , (1:0) )
+               for transOtoN in transitionOtoN.transitions[no+1][so][OtoNlist]
                   En = transOtoN.EvalFromTo[2]
                   expEnp = transOtoN.ExpFromTo[2] - transPtoO.ExpFromTo[1]
                   nn = transOtoN.nFromTo[2]
@@ -186,21 +197,28 @@ function getGF2partTerm(transitionNtoM::Transitions,
                   nstate = transOtoN.iFromTo[2]
       
                   # Apply exp cutoff
-                  if expEop + expEnp + expEmp > pNumerics.cutoff
+                  #if expEop + expEnp + expEmp > pNumerics.cutoff
+                  if expEop  > pNumerics.cutoff || expEnp > pNumerics.cutoff || expEmp > pNumerics.cutoff
       
                      # now pick out the <m|c|n> transitions that have n=nstate AND m=mstate since we need to go back
-                     itransNM = findall(x->(x.iFromTo==[nstate,mstate]), transitionNtoM.transitions[nn+1][sn] )
-                     for transNtoM in transitionNtoM.transitions[nn+1][sn][itransNM]
+                     indexNtoMstate = get( transitionNtoM.dictFromTo[nn+1][sn], (nstate,mstate) , 0 )
+                     if (indexNtoMstate>0 )
+                        transNtoM = transitionNtoM.transitions[nn+1][sn][indexNtoMstate]
       
                         overlap = transMtoP.overlap * transPtoO.overlap * transOtoN.overlap * transNtoM.overlap
                         gfnorm += real(overlap)
+                        counter += 1
+
                         for n1=1:nw
+                           w1 = pFreq.iwf[n1]
                            for n2=1:nw
+                              w2 = pFreq.iwf[n2]
                               for n3=1:nw
-                                 w = [ pFreq.iwf[n1], pFreq.iwf[n2], pFreq.iwf[n3] ]
-                                 gfterm[n1,n2,n3] += overlap*getFuckingLarge2partTerm(w[wperm[1]],w[wperm[2]],w[wperm[3]],
-                                                                                      Em,En,Eo,Ep,
-                                                                                      expEop,expEnp,expEmp)
+                                 w3 = pFreq.iwf[n3]
+                                 gfterm[n1,n2,n3] += overlap*getFuckingLarge2partTerm(w1*(wperm[1]==1) + w2*(wperm[1]==2) + w3*(wperm[1]==3),
+                                                                                      w1*(wperm[2]==1) + w2*(wperm[2]==2) + w3*(wperm[2]==3),
+                                                                                      w1*(wperm[3]==1) + w2*(wperm[3]==2) + w3*(wperm[3]==3),
+                                                                                      Em,En,Eo,Ep,expEop,expEnp,expEmp)
                               end # n3
                            end # n2
                         end # n1
@@ -213,6 +231,7 @@ function getGF2partTerm(transitionNtoM::Transitions,
 
       end # sm
    end # nm
+   println(counter," #Transitions contributed to 2part GF term")
    return gfterm, gfnorm
 end
 
@@ -241,12 +260,12 @@ function getGF2part(transitions::Array{Transitions,1},   # two for each flavor
    #   evalContributions[m,:] = [Nm,Sm,Em,0.0]
    #end
 
-   gf,gfnorm = .-getGF2partTerm(transitions[1],transitions[2],transitions[3],transitions[4],pFreq,nw,[1,2,3],pNumerics)
+   gf,gfnorm =(.-getGF2partTerm(transitions[1],transitions[2],transitions[3],transitions[4],pFreq,nw,[1,2,3],pNumerics)
                .+getGF2partTerm(transitions[2],transitions[1],transitions[3],transitions[4],pFreq,nw,[2,1,3],pNumerics)
                .-getGF2partTerm(transitions[2],transitions[3],transitions[1],transitions[4],pFreq,nw,[2,3,1],pNumerics)
                .+getGF2partTerm(transitions[3],transitions[2],transitions[1],transitions[4],pFreq,nw,[3,2,1],pNumerics)
                .+getGF2partTerm(transitions[1],transitions[3],transitions[2],transitions[4],pFreq,nw,[1,3,2],pNumerics)
-               .-getGF2partTerm(transitions[3],transitions[1],transitions[2],transitions[4],pFreq,nw,[3,1,2],pNumerics)
+               .-getGF2partTerm(transitions[3],transitions[1],transitions[2],transitions[4],pFreq,nw,[3,1,2],pNumerics) )
 
    println("\rdone!")
    gf ./= Z

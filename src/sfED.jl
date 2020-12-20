@@ -1,7 +1,7 @@
-module sfED
-__precompile__(false)
+#module sfED
+#__precompile__(false)
 
-export example_run, noSpinConfig
+#export example_run, noSpinConfig
 
 using LinearAlgebra
 using SparseArrays
@@ -17,13 +17,13 @@ include("greensfunction.jl")
 include("IO.jl")
 
 function example_run()
-   norb = 4
-   U = 3.0
-   J = 0.3
-   Up = U-2*J
+   norb = 5
+   U = 1.0
+   J = 0.0
+   Up = 0 #U-2*J
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
-   beta = 40.0
+   beta = 250.0
    #gf_flav = [1,5]
    gf_flav = [2*m-1 for m in 1:norb]
 
@@ -80,14 +80,14 @@ function example_run()
 
    println("Determining overlaps between eigenvectors for 2partGF...")
    transitions2pGF = get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
-   transitions2pGF = @time get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
+#   transitions2pGF = @time get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
    println("Create interacting two-particle Green's function...")
-   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,5,pNumerics)
-   gf2part = @time getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,5,pNumerics)
+   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,1,pNumerics)
+   gf2part = @time getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,1,pNumerics)
    writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
 #  writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
 
    end # end example function
-end
-#example_run()
+#end
+example_run()
