@@ -235,9 +235,9 @@ The \textbf{\underline{second}} term evaluates to
 \end{align}
 which we see is precisely the same expression as the first term, except we have to swap $i\omega_2 \leftrightarrow i\omega_3$,
 and flip the overall sign.
-Therefore, we get $f(\omega_1,\omega_3,\omega_2)$, where we have defined
+Therefore, we get $f_{mnop}(\omega_1,\omega_3,\omega_2)$, where we have defined
 \begin{align}
-f(\omega_1,\omega_2,\omega_3)
+f_{mnop}(\omega_1,\omega_2,\omega_3)
    &=
 \frac{1}{i\omega_1 +E_m-E_n}
  \Big( \frac{1}{i\omega_2 +E_n-E_o}
@@ -253,13 +253,13 @@ f(\omega_1,\omega_2,\omega_3)
  \Big) .
  %
 \end{align}
-For the \textbf{\underline{third}} term we have to swap $i\omega_1 \leftrightarrow i\omega_2$ compared to the first term and obtain $f(\omega_2,\omega_1,\omega_3)$
+For the \textbf{\underline{third}} term we have to swap $i\omega_1 \leftrightarrow i\omega_2$ compared to the first term and obtain $f_{mnop}(\omega_2,\omega_1,\omega_3)$
 
-For the \textbf{\underline{fourth}} term we have to swap $i\omega_1 \leftrightarrow i\omega_3$ compared to the third term and obtain $-f(\omega_2,\omega_3,\omega_1)$
+For the \textbf{\underline{fourth}} term we have to swap $i\omega_1 \leftrightarrow i\omega_3$ compared to the third term and obtain $-f_{mnop}(\omega_2,\omega_3,\omega_1)$
 
-For the \textbf{\underline{fifth}} term we have to swap $i\omega_2 \leftrightarrow i\omega_3$ compared to the third term and obtain $-f(\omega_3,\omega_1,\omega_2)$
+For the \textbf{\underline{fifth}} term we have to swap $i\omega_2 \leftrightarrow i\omega_3$ compared to the third term and obtain $-f_{mnop}(\omega_3,\omega_1,\omega_2)$
 
-For the \textbf{\underline{sixth}} term we have to swap $i\omega_1 \leftrightarrow i\omega_2$ compared to the fifth term and obtain $f(\omega_3,\omega_2,\omega_1)$
+For the \textbf{\underline{sixth}} term we have to swap $i\omega_1 \leftrightarrow i\omega_2$ compared to the fifth term and obtain $f_{mnop}(\omega_3,\omega_2,\omega_1)$
 
 Collecting all terms we obtain the final expression for the two-particle Green's function
 \begin{align}
@@ -267,22 +267,22 @@ Collecting all terms we obtain the final expression for the two-particle Green's
 =  \sum_{mnop} \Big( 
  % 1st%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     & - \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o}\braket{o| c^{\dagger}_{\downarrow} |p}\braket{p| c_{\downarrow} |m}
-        f(\omega_1,\omega_2,\omega_3)\nonumber\\
+        f_{mnop}(\omega_1,\omega_2,\omega_3)\nonumber\\
  %2nd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     &+ \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m}
-       f(\omega_1,\omega_3,\omega_2) \nonumber  \\
+       f_{mnop}(\omega_1,\omega_3,\omega_2) \nonumber  \\
  %3rd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      &+\braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o}\braket{o|c^{\dagger}_{\downarrow} |p}\braket{p|c_{\downarrow} |m}
-       f(\omega_2,\omega_1,\omega_3) \nonumber\\
+       f_{mnop}(\omega_2,\omega_1,\omega_3) \nonumber\\
  %4th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      &-\braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow} |o}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m}
-       f(\omega_2,\omega_3,\omega_1)\nonumber\\
+       f_{mnop}(\omega_2,\omega_3,\omega_1)\nonumber\\
  %5th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      &-\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m}
-       f(\omega_3,\omega_1,\omega_2) \nonumber\\
+       f_{mnop}(\omega_3,\omega_1,\omega_2) \nonumber\\
  %6th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      &+\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m}
-       f(\omega_3,\omega_2,\omega_1) \Big.
+       f_{mnop}(\omega_3,\omega_2,\omega_1) \Big.
 \end{align}
 When analyzing the overlap elements we see that each term corresponds to the following transitions: Starting with $\ket{m}$
 being a state $m(N,S)$ with electron number $N$ and total spin $S$ we get  by going from right to left
@@ -303,28 +303,43 @@ So we rearrange the terms grouping them by similar transitions in order to reuse
  (2): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N-2,S)  &\rightarrow n(N-1,S-1)  \rightarrow m(N,S) \nonumber\\
  (5): \ \  & m(N,S) \rightarrow p(N-1,S+1) \rightarrow o(N-2,S)  &\rightarrow n(N-1,S+1)  \rightarrow m(N,S) 
 \end{align}
-which results in the final expression to be evaluated
+which results in 
 \begin{align}
  G^{(2)}_{\uparrow \downarrow}(\omega_1,\omega_2,\omega_3)
 =  \sum_{mnop} \Big( 
  % 1st%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     & - \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o} {\color{red}\braket{o| c^{\dagger}_{\downarrow} |p}\braket{p| c_{\downarrow} |m} }
-        f(\omega_1,\omega_2,\omega_3)\nonumber\\
+        f_{mnop}(\omega_1,\omega_2,\omega_3)\nonumber\\
  %3rd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      &+\braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o} {\color{red}\braket{o|c^{\dagger}_{\downarrow} |p}\braket{p|c_{\downarrow} |m} }
-       f(\omega_2,\omega_1,\omega_3) \nonumber\\
+       f_{mnop}(\omega_2,\omega_1,\omega_3) \nonumber\\
  %4th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      &-\braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow}|o} {\color{olive}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m} }
-       f(\omega_2,\omega_3,\omega_1)\nonumber\\
+       f_{mnop}(\omega_2,\omega_3,\omega_1)\nonumber\\
  %6th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      &+\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o} {\color{olive}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m} }
-       f(\omega_3,\omega_2,\omega_1) \nonumber \\
+       f_{mnop}(\omega_3,\omega_2,\omega_1) \nonumber \\
  %2nd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     &+ \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o} {\color{blue}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} }
-       f(\omega_1,\omega_3,\omega_2) \nonumber  \\
+       f_{mnop}(\omega_1,\omega_3,\omega_2) \nonumber  \\
  %5th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      &-\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o} {\color{blue}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} }
-       f(\omega_3,\omega_1,\omega_2) \Big) .
+       f_{mnop}(\omega_3,\omega_1,\omega_2) \Big) \\
+%       
+%       
+   =  \sum_{mnop} \Big[ 
+ % 1st+3rd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     \big( - \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o} & f_{mnop}(\omega_1,\omega_2,\omega_3)
+           + \braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o}  f_{mnop}(\omega_2,\omega_1,\omega_3) \big) 
+            {\color{red}\braket{o|c^{\dagger}_{\downarrow} |p}\braket{p|c_{\downarrow} |m} }         \nonumber\\
+ %4th+6th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     \big(-\braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow}|o} & f_{mnop}(\omega_2,\omega_3,\omega_1)
+          +\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o}  f_{mnop}(\omega_3,\omega_2,\omega_1) \big)
+      {\color{olive}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m} }   \nonumber \\
+ %2nd+5th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     \big(+\braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o} & f_{mnop}(\omega_1,\omega_3,\omega_2)
+         -\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o}    f_{mnop}(\omega_3,\omega_1,\omega_2) \big) 
+         {\color{blue}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} }   \Big]
 \end{align}
 %
 %%
