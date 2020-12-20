@@ -327,19 +327,19 @@ which results in
        f_{mnop}(\omega_3,\omega_1,\omega_2) \Big) \\
 %       
 %       
-   =  \sum_{mnop} \Big[ 
+   =  \sum_{mnop} \Big( 
  % 1st+3rd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     \big( - \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o} & f_{mnop}(\omega_1,\omega_2,\omega_3)
-           + \braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o}  f_{mnop}(\omega_2,\omega_1,\omega_3) \big) 
+     \big[ -f_{mnop}(\omega_1,\omega_2,\omega_3) &  \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o}
+           +f_{mnop}(\omega_2,\omega_1,\omega_3)    \braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o}  \big] 
             {\color{red}\braket{o|c^{\dagger}_{\downarrow} |p}\braket{p|c_{\downarrow} |m} }         \nonumber\\
  %4th+6th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     \big(-\braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow}|o} & f_{mnop}(\omega_2,\omega_3,\omega_1)
-          +\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o}  f_{mnop}(\omega_3,\omega_2,\omega_1) \big)
+     \big[-f_{mnop}(\omega_2,\omega_3,\omega_1) & \braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow}|o}
+          +f_{mnop}(\omega_3,\omega_2,\omega_1)   \braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o}  \big]  
       {\color{olive}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m} }   \nonumber \\
  %2nd+5th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     \big(+\braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o} & f_{mnop}(\omega_1,\omega_3,\omega_2)
-         -\braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o}    f_{mnop}(\omega_3,\omega_1,\omega_2) \big) 
-         {\color{blue}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} }   \Big]
+     \big[+f_{mnop}(\omega_1,\omega_3,\omega_2) & \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o}
+         -f_{mnop}(\omega_3,\omega_1,\omega_2)    \braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o} \big]
+         {\color{blue}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} }   \Big)
 \end{align}
 %
 %%
