@@ -1,5 +1,5 @@
 const SingleParticleFunction = Array{Complex{Float32},3}
-const TwoParticleFunction = Array{Complex{Float32},3}  # single orbital for now, depends on 3 frequencies
+const TwoParticleFunction = Array{Complex{Float32},1}  # single orbital for now, depends on 3 frequencies but put into a linear array
 
 
 ########################################################################
@@ -148,12 +148,11 @@ function getGF2partTerm(transitionNtoM::Transitions,
                         transitionOtoN::Transitions,
                         transitionPtoO::Transitions,
                         transitionMtoP::Transitions,
-                        pFreq::FrequencyMeshes, nw::Int64,
-                        wperm::Array{Int64,1},
+                        wlist,
                         pNumerics::NumericalParameters)::Tuple{TwoParticleFunction, Float32 }
 
    gfnorm::Float32 = 0.0
-   gfterm = zeros(Complex{Float32},nw,nw,nw)
+   gfterm = zeros(Complex{Float32},length(wlist))
    Nmax=length(transitionMtoP.transitions)-1
 
    counter::Int128 = 0
@@ -162,15 +161,15 @@ function getGF2partTerm(transitionNtoM::Transitions,
    for nm=0:Nmax
       for sm=1:noSpinConfig(nm,Nmax)
 
-         for transMtoP in transitionMtoP.transitions[nm+1][sm]
+         for iMP=1:length(transitionMtoP.transitions[nm+1][sm])
             if ii%(max(1,round(Int64,nst/100.0))) == 0
                print("\r"*lpad(round(Int64,ii*100.0/nst),4)*" % ")
                #println("COUNTER: ",counter)
                flush(stdout)
             end
             ii += 1
-            
 
+            transMtoP = transitionMtoP.transitions[nm+1][sm][iMP]
             mstate = transMtoP.iFromTo[1]
             Em,Ep = transMtoP.EvalFromTo[1:2]
             expEmp = sum(transMtoP.ExpFromTo[1:2])
@@ -179,17 +178,17 @@ function getGF2partTerm(transitionNtoM::Transitions,
             pstate = transMtoP.iFromTo[2]
       
             # now pick out the <o|c|p> transitions that have p=pstate
-            PtoOlist = get( transitionPtoO.dictFrom[np+1][sp], pstate , (1:0) )
-            for transPtoO in transitionPtoO.transitions[np+1][sp][PtoOlist]
+            for iPO=get( transitionPtoO.dictFrom[np+1][sp], pstate , (1:0) )
+               transPtoO = transitionPtoO.transitions[np+1][sp][iPO]
                Eo = transPtoO.EvalFromTo[2]
-               expEop = sum(transPtoO.ExpFromTo[1:2])
+               expEop = transPtoO.ExpFromTo[1] + transPtoO.ExpFromTo[2]
                no = transPtoO.nFromTo[2]
                so = transPtoO.sFromTo[2]
                ostate = transPtoO.iFromTo[2]
       
                # now pick out the <n|c|o> transitions that have o=ostate
-               OtoNlist = get( transitionOtoN.dictFrom[no+1][so], ostate , (1:0) )
-               for transOtoN in transitionOtoN.transitions[no+1][so][OtoNlist]
+               for iON=get( transitionOtoN.dictFrom[no+1][so], ostate , (1:0) )
+                  transOtoN = transitionOtoN.transitions[no+1][so][iON]
                   En = transOtoN.EvalFromTo[2]
                   expEnp = transOtoN.ExpFromTo[2] - transPtoO.ExpFromTo[1]
                   nn = transOtoN.nFromTo[2]
@@ -197,8 +196,7 @@ function getGF2partTerm(transitionNtoM::Transitions,
                   nstate = transOtoN.iFromTo[2]
       
                   # Apply exp cutoff
-                  #if expEop + expEnp + expEmp > pNumerics.cutoff
-                  if expEop  > pNumerics.cutoff || expEnp > pNumerics.cutoff || expEmp > pNumerics.cutoff
+                  if expEop + expEnp + expEmp > pNumerics.cutoff
       
                      # now pick out the <m|c|n> transitions that have n=nstate AND m=mstate since we need to go back
                      indexNtoMstate = get( transitionNtoM.dictFromTo[nn+1][sn], (nstate,mstate) , 0 )
@@ -209,19 +207,10 @@ function getGF2partTerm(transitionNtoM::Transitions,
                         gfnorm += real(overlap)
                         counter += 1
 
-                        for n1=1:nw
-                           w1 = pFreq.iwf[n1]
-                           for n2=1:nw
-                              w2 = pFreq.iwf[n2]
-                              for n3=1:nw
-                                 w3 = pFreq.iwf[n3]
-                                 gfterm[n1,n2,n3] += overlap*getFuckingLarge2partTerm(w1*(wperm[1]==1) + w2*(wperm[1]==2) + w3*(wperm[1]==3),
-                                                                                      w1*(wperm[2]==1) + w2*(wperm[2]==2) + w3*(wperm[2]==3),
-                                                                                      w1*(wperm[3]==1) + w2*(wperm[3]==2) + w3*(wperm[3]==3),
-                                                                                      Em,En,Eo,Ep,expEop,expEnp,expEmp)
-                              end # n3
-                           end # n2
-                        end # n1
+                        for n=1:length(wlist)
+                           gfterm[n] += overlap*getFuckingLarge2partTerm(wlist[n][1],wlist[n][2],wlist[n][3],
+                                                                         Em,En,Eo,Ep,expEop,expEnp,expEmp)
+                        end # n
       
                      end # n->m
                   end # exp cutoff
@@ -259,13 +248,20 @@ function getGF2part(transitions::Array{Transitions,1},   # two for each flavor
    #   Sm    = spinConfig(sm,Nm,Nmax)
    #   evalContributions[m,:] = [Nm,Sm,Em,0.0]
    #end
+   
+   w123 = [ (pFreq.iwf[i],pFreq.iwf[j],pFreq.iwf[k]) for i=1:nw, j=1:nw , k=1:nw ]
+   w213 = [ (pFreq.iwf[j],pFreq.iwf[i],pFreq.iwf[k]) for i=1:nw, j=1:nw , k=1:nw ]
+   w231 = [ (pFreq.iwf[j],pFreq.iwf[k],pFreq.iwf[i]) for i=1:nw, j=1:nw , k=1:nw ]
+   w321 = [ (pFreq.iwf[k],pFreq.iwf[j],pFreq.iwf[i]) for i=1:nw, j=1:nw , k=1:nw ]
+   w132 = [ (pFreq.iwf[i],pFreq.iwf[k],pFreq.iwf[j]) for i=1:nw, j=1:nw , k=1:nw ]
+   w312 = [ (pFreq.iwf[k],pFreq.iwf[i],pFreq.iwf[j]) for i=1:nw, j=1:nw , k=1:nw ]
 
-   gf,gfnorm =(.-getGF2partTerm(transitions[1],transitions[2],transitions[3],transitions[4],pFreq,nw,[1,2,3],pNumerics)
-               .+getGF2partTerm(transitions[2],transitions[1],transitions[3],transitions[4],pFreq,nw,[2,1,3],pNumerics)
-               .-getGF2partTerm(transitions[2],transitions[3],transitions[1],transitions[4],pFreq,nw,[2,3,1],pNumerics)
-               .+getGF2partTerm(transitions[3],transitions[2],transitions[1],transitions[4],pFreq,nw,[3,2,1],pNumerics)
-               .+getGF2partTerm(transitions[1],transitions[3],transitions[2],transitions[4],pFreq,nw,[1,3,2],pNumerics)
-               .-getGF2partTerm(transitions[3],transitions[1],transitions[2],transitions[4],pFreq,nw,[3,1,2],pNumerics) )
+   gf,gfnorm =(.-getGF2partTerm(transitions[1],transitions[2],transitions[3],transitions[4],w123,pNumerics)
+               .+getGF2partTerm(transitions[2],transitions[1],transitions[3],transitions[4],w213,pNumerics)
+               .-getGF2partTerm(transitions[2],transitions[3],transitions[1],transitions[4],w231,pNumerics)
+               .+getGF2partTerm(transitions[3],transitions[2],transitions[1],transitions[4],w321,pNumerics)
+               .+getGF2partTerm(transitions[1],transitions[3],transitions[2],transitions[4],w132,pNumerics)
+               .-getGF2partTerm(transitions[3],transitions[1],transitions[2],transitions[4],w312,pNumerics) )
 
    println("\rdone!")
    gf ./= Z

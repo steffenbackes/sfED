@@ -331,17 +331,49 @@ which results in
  % 1st+3rd%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      \big[ -f_{mnop}(\omega_1,\omega_2,\omega_3) &  \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c_{\uparrow}|o}
            +f_{mnop}(\omega_2,\omega_1,\omega_3)    \braket{m|c_{\uparrow}|n}\braket{n| c^{\dagger}_{\uparrow} |o}  \big] 
-            {\color{red}\braket{o|c^{\dagger}_{\downarrow} |p}\braket{p|c_{\downarrow} |m} }         \nonumber\\
+            {\color{red}\braket{o|c^{\dagger}_{\downarrow} |p} }         \nonumber\\
  %4th+6th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      \big[-f_{mnop}(\omega_2,\omega_3,\omega_1) & \braket{m|c_{\uparrow} |n}\braket{n|c^{\dagger}_{\downarrow}|o}
           +f_{mnop}(\omega_3,\omega_2,\omega_1)   \braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c_{\uparrow} |o}  \big]  
-      {\color{olive}\braket{o|c^{\dagger}_{\uparrow} |p}\braket{p| c_{\downarrow} |m} }   \nonumber \\
+      {\color{olive}\braket{o|c^{\dagger}_{\uparrow} |p} }   \nonumber \\
  %2nd+5th%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      \big[+f_{mnop}(\omega_1,\omega_3,\omega_2) & \braket{m|c^{\dagger}_{\uparrow}|n}\braket{n| c^{\dagger}_{\downarrow} |o}
          -f_{mnop}(\omega_3,\omega_1,\omega_2)    \braket{m|c^{\dagger}_{\downarrow} |n}\braket{n|c^{\dagger}_{\uparrow} |o} \big]
-         {\color{blue}\braket{o|c_{\uparrow} |p}\braket{p|c_{\downarrow} |m} }   \Big)
+         {\color{blue}\braket{o|c_{\uparrow} |p} }   \Big) \braket{p|c_{\downarrow} |m} \\
+%         
 \end{align}
+Defining $f^{ijk}_{mnop}:= f_{mnop}(\omega_i,\omega_j,\omega_k)$ and $c^1:=c^{\dagger}_{\uparrow}, c^2:=c_{\uparrow}, c^3:=c^{\dagger}_{\downarrow}$ 
+and the overlap $c^i_{mn}:=\braket{m|c_i|n}$
+this expression can be written as
+\begin{align}
+  G^{(2),123}_{\uparrow \downarrow}
+&=  -\sum_{mp}\Bigg[
+            \sum_o
+            \left(\sum_{n} f^{123}_{mnop} c^1_{mn}c^2_{no} -f^{213}_{mnop}c^2_{mn}c^1_{no}\right)
+                           c^3_{op}     \nonumber \\
+%           
+         &\hspace*{1.5cm} +\sum_o
+            \left(\sum_{n} f^{231}_{mnop} c^2_{mn}c^3_{no} -f^{321}_{mnop}c^3_{mn}c^2_{no}\right)
+                           c^1_{op}  \nonumber \\
+%           
+         &\hspace*{1.5cm} +\sum_o
+            \left(\sum_{n} f^{312}_{mnop} c^3_{mn}c^1_{no} -f^{132}_{mnop}c^1_{mn}c^3_{no}\right)
+                           c^2_{op}  
+\Bigg] c^4_{pm} \\
 %
-%%
+&= -\sum_{mp} g_{mp} c^4_{pm},
+\end{align}
+where 
+\begin{align}
+g_{mp}  &= g^{123}_{mp} + g^{231}_{mp} + g^{312}_{mp} \\
+%
+g^{ijk}_{mp} &= \sum_{o} g^{ij,k,sym}_{mop} c^k_{op} \\
+%
+g^{ij,k,sym}_{mop}  &=g^{ij,k}_{mop} - g^{ji,k}_{mop}\\
+%
+g^{ij,k}_{mop}  &= \sum_n f^{ijk}_{mnop} c^i_{mn}c^j_{no} 
+\end{align}
+
+
 %%
 \end{document}

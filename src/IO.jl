@@ -57,19 +57,18 @@ Writes a Green's function `G(nw,nw,nw)` in human readable (fixed column width fo
 `mgrid` is the associated Matsuabra grid (as indices or evaluated).
 """
 function writeGF2part(io::IO, G::TwoParticleFunction,mgrid)
-    nw1=size(G,1)
-    nw2=size(G,2)
-    nw3=size(G,3)
+    nw=size(G,1)
 
-    for n1=1:nw1
+    for n1=1:nw
         ww1 = mgrid[n1]
-        for n2=1:nw2
+        for n2=1:nw
             ww1 = mgrid[n1]
             ww2 = mgrid[n2]
             @printf(io, "%.7E  %.7E  ", ww1,ww2)
 
-            reg = real(G[n1,n2,1])
-            img = imag(G[n1,n2,1])
+            n = n1 + (n2-1)*nw + 0
+            reg = real(G[n])
+            img = imag(G[n])
             @printf(io, "%.7E  %.7E   ", reg, img)
 
             write(io, "\n" )

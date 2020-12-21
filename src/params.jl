@@ -11,14 +11,15 @@ struct SimulationParameters
    t      ::Float64        # hopping parameter (positive)
    mu     ::Float64        # chemical potential
    beta   ::Float64        # inverse temperature
+   aim    ::Int64        # Anderson IMpurity model: if equal one, apply chemical potential only to first orbital (rest is considered as bath)
    gf_flav::Array{Int64,1} # flavors (orb/spin) for which the Green's function is calculated (full matrix flav x flav)
 end
 
-SimulationParameters(;U,J,Up=U-2*J,t,mu,beta,gf_flav) = SimulationParameters(U,J,Up,t,mu,beta,gf_flav)
+SimulationParameters(;U,J,Up=U-2*J,t,mu,beta,aim,gf_flav) = SimulationParameters(U,J,Up,t,mu,beta,aim,gf_flav)
 
 struct NumericalParameters
-   delta            ::Float64   # broadening parameter, we work above the real axis at w+im*delta
-   cutoff           ::Float64   # numerical cutoff for things like Boltzmann weights or other things
+   delta            ::Float32   # broadening parameter, we work above the real axis at w+im*delta
+   cutoff           ::Float32   # numerical cutoff for things like Boltzmann weights or other things
 
    NumericalParameters(;delta,cutoff) = new(delta,cutoff)
 end

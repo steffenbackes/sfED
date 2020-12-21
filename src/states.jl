@@ -138,13 +138,13 @@ Constructor for the Eigenspace struct
 """
 function Eigenspace(eps::Array{Float64,1},tmatrix::Array{Float64,2},
                     Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
-                    mu::Float64,
+                    pSimulation::SimulationParameters,
                     fockstates::Fockstates,
                     pNumerics::NumericalParameters)
    Nstates=fockstates.Nstates
    norb=fockstates.norb
 
-   evals,evecs = getEvalveclist(eps,tmatrix,Umatrix,Jmatrix,mu,fockstates,pNumerics)
+   evals,evecs = getEvalveclist(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,pSimulation.aim,fockstates,pNumerics)
    E0 = minimum([ e for nse in evals for se in nse for e in se  ])
 
    return Eigenspace(Nstates,norb,E0,evals,evecs)

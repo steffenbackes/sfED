@@ -1,12 +1,13 @@
-#module sfED
-#__precompile__(false)
+module sfED
+__precompile__(false)
 
-#export example_run, noSpinConfig
+export example_run, noSpinConfig
 
 using LinearAlgebra
 using SparseArrays
 using Printf
 using Random
+#using Profile
 
 include("params.jl")
 include("states.jl")
@@ -23,17 +24,18 @@ function example_run()
    Up = 0 #U-2*J
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
-   beta = 250.0
-   #gf_flav = [1,5]
-   gf_flav = [2*m-1 for m in 1:norb]
+   beta = 25.0
+   aim = 1
+   gf_flav = [1]
+   #gf_flav = [2*m-1 for m in 1:norb]
 
-   pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
+   pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, aim=aim, gf_flav=gf_flav)
    pFreq = FrequencyMeshes(nw=501,
                            wmin=-8.0, wmax=8.0,
                            iwmax=80.0,
                            beta=pSimulation.beta)
 
-   pNumerics = NumericalParameters(delta=0.03, cutoff=1e-6)
+   pNumerics = NumericalParameters(delta=0.03, cutoff=1e-5)
 
    fockstates = Fockstates(norb=norb)
    #writeStateInfo(fockstates)
@@ -54,14 +56,13 @@ function example_run()
    writeGF("gf0_w.dat",gf0_w,pFreq.wf)
    writeGF("gf0_iw.dat",gf0_iw, pFreq.iwf )
    
-   eigenspace = Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
+   eigenspace = Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
    println("Groundstate energy E0=", eigenspace.E0 )
    println("Partition function Z=",getZ(eigenspace,pSimulation.beta) )
    writeEvalInfo(eigenspace,fockstates)
 
    println("Determining overlaps between eigenvectors for 1partGF...")
    transitions1pGF = get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
-   transitions1pGF = @time get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
 #   writeTransitionsOverlaps("transitionOverlaps.dat",overlaps1pGF) # This file gets HUUGE!!
 
    println("Create interacting single-particle Green's function...")
@@ -80,14 +81,13 @@ function example_run()
 
    println("Determining overlaps between eigenvectors for 2partGF...")
    transitions2pGF = get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
-#   transitions2pGF = @time get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
    println("Create interacting two-particle Green's function...")
-   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,1,pNumerics)
-   gf2part = @time getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,1,pNumerics)
+   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,5,pNumerics)
    writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
 #  writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
 
+#   Profile.print()
    end # end example function
-#end
-example_run()
+end
+#example_run()

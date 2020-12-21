@@ -11,9 +11,10 @@ using Random
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
    beta = 40.0
+   aim = 0
    gf_flav = [1,5]
 
-   pSimulation = sfED.SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, gf_flav=gf_flav)
+   pSimulation = sfED.SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, aim=aim, gf_flav=gf_flav)
    pFreq = sfED.FrequencyMeshes(nw=1,
                            wmin=-1.5169661, wmax=1.0,
                            iwmax=2.0,
@@ -56,7 +57,7 @@ using Random
    gf0_w  = sfED.getG0(eps,tmatrix,pSimulation,sfED.FrequencyMeshCplx(pFreq.wf .+ im*pNumerics.delta) )    # real frequencies
    gf0_iw = sfED.getG0(eps,tmatrix,pSimulation,sfED.FrequencyMeshCplx(im*pFreq.iwf) )                      # Matsubara frequencies
 
-   eigenspace = sfED.Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
+   eigenspace = sfED.Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
 
    transitions1pGF = sfED.get1pGFTransitions(pSimulation.gf_flav,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions, E1,E2 and the overlap elements
 

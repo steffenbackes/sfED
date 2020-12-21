@@ -340,11 +340,9 @@ over precomputed `states`.
 """
 function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
                         Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2}, 
-                        mu::Float64,
+                        mu::Float64,aim::Int64,
                         states::Array{Fockstate,1},
                         pNumerics::NumericalParameters)::Hamiltonian
-
-   #println("!!WARNING: To simulate an AIM we excluded the bath states from the chemical potential in hamiltonian.jl !!!")
 
    # Set up index array for the sparse Hamiltonian Matrix
    HamiltonianElementsI = Int64[]
@@ -353,8 +351,11 @@ function getHamiltonian(eps::Array{Float64,1},tmatrix::Array{Float64,2},
    for i=1:length(states)
       Hiitmp = 0.0
       # set the diagonals 
-      #Hiitmp += -mu*sum(states[i])     # chemical potential
-      Hiitmp += -mu*sum(states[i][1:2])     # chemical potential: this is when doing an AIM one-orbital calculation
+      if aim==1
+         Hiitmp += -mu*sum(states[i][1:2])     # chemical potential: this is when doing an AIM one-orbital calculation
+      else
+         Hiitmp += -mu*sum(states[i])     # chemical potential
+      end
 
       Hiitmp += sum(eps .* states[i] ) # onsite levels
    
@@ -405,7 +406,7 @@ Create the N,S submatrices of the Hamiltonian, solve it and return the Eigenvalu
 """
 function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
                         Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
-                        mu::Float64,
+                        mu::Float64, aim::Int64,
                         fockstates::Fockstates,
                         pNumerics::NumericalParameters)
    Nmax = fockstates.norb*2
@@ -419,7 +420,7 @@ function getEvalveclist(eps::Array{Float64,1},tmatrix::Array{Float64,2},
          print("Constructing Hamiltonian(",dim,"x",dim,"), N=",n,", S=",spinConfig(s,n,Nmax),"... ")
 
          # now get the Hamiltonian submatrix spanned by all states <i| |j> in the N,S space (sparse matrix)
-         hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,fockstates.states[n+1][s],pNumerics)
+         hamiltonian = getHamiltonian(eps,tmatrix,Umatrix,Jmatrix,mu,aim,fockstates.states[n+1][s],pNumerics)
          println("Done!")
 
          # (n==8 && spinConfig(s,n,Nmax)==0) && (writeMatrixGnuplot("hamil.dat",Matrix(hamiltonian));  exit())
