@@ -19,7 +19,7 @@ include("IO.jl")
 
 function example_run()
    norb = 5
-   U = 1.0
+   U = 1.0 
    J = 0.0
    Up = 0 #U-2*J
    t = 1.0
@@ -67,7 +67,6 @@ function example_run()
 
    println("Create interacting single-particle Green's function...")
    gf_w, gf_iw = getGF(transitions1pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
-   gf_w, gf_iw = @time getGF(transitions1pGF,getZ(eigenspace,pSimulation.beta),pSimulation,pFreq,pNumerics)
 
    sigma_w    = getSigma(gf0_w,gf_w)                                     # get Selfenergy
    sigma_iw   = getSigma(gf0_iw,gf_iw)

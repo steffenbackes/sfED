@@ -57,7 +57,7 @@ Writes a Green's function `G(nw,nw,nw)` in human readable (fixed column width fo
 `mgrid` is the associated Matsuabra grid (as indices or evaluated).
 """
 function writeGF2part(io::IO, G::TwoParticleFunction,mgrid)
-    nw= Int64( size(G,1) )^(1/3)
+    nw= round(Int64, size(G,1)^(1/3) )
 
     for n1=1:nw
         ww1 = mgrid[n1]

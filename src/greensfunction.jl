@@ -72,7 +72,8 @@ function getGF(transitions::Array{Transitions,1},   # two for each flavor
       # loop over all transitions c^dag_b|1>
       for n1=0:Nmax
          for s1=1:noSpinConfig(n1,Nmax)
-            for trans2cdagb1 in transitions[2*b-1].transitions[n1+1][s1]
+            for i21=1:length(transitions[2*b-1].transitions[n1+1][s1])
+               trans2cdagb1 = transitions[2*b-1].transitions[n1+1][s1][i21]
                overlapb = trans2cdagb1.overlap
                ifrom,ito = trans2cdagb1.iFromTo[1:2]
                Efrom,Eto = trans2cdagb1.EvalFromTo[1:2]
@@ -81,7 +82,8 @@ function getGF(transitions::Array{Transitions,1},   # two for each flavor
 
                for a=1:b # only upper triangular part
                   # the transition <1|c_a|2> is completely fixed by knowing <2|c^dag_b|1>, just look up the overlap if there exists one
-                  for it in findall(x->(x.iFromTo==[ito,ifrom]), transitions[2*a-0].transitions[n2+1][s2] )
+                  it = get( transitions[2*a-0].dictFromTo[n2+1][s2], (ito,ifrom) , 0 )
+                  if (it>0 )
 
                      ovrlp = (exp(-beta*Efrom)+exp(-beta*Eto))*transitions[2*a-0].transitions[n2+1][s2][it].overlap*overlapb      # <n1|c_a|n2> * <n2|cdag_b|n1>
 
@@ -132,9 +134,24 @@ function getFuckingLarge2partTerm(w1::Float32,w2::Float32,w3::Float32,
                                   Em::Eigenvalue,En::Eigenvalue,Eo::Eigenvalue,Ep::Eigenvalue,
                                   expEop::Float32,expEnp::Float32,expEmp::Float32)::Complex{Float32}
 
-   return (  ( expEop/(im*w3+Eo-Ep) + expEnp/(im*w2+im*w3+En-Ep) )/(im*w2+En-Eo)  
-            -( expEop/(im*w3+Eo-Ep) - expEmp/(im*w1+(im*w2+im*w3+Em-Ep)) )/(im*w1+(im*w2+Em-Eo))
-          )/( im*w1+(Em-En) )
+#   return (  ( expEop/(im*w3+Eo-Ep) + expEnp/(im*w2+im*w3+En-Ep) )/(im*w2+En-Eo)  
+#            -( expEop/(im*w3+Eo-Ep) - expEmp/(im*w1+(im*w2+im*w3+Em-Ep)) )/(im*w1+(im*w2+Em-Eo))
+#          )/( im*w1+(Em-En) )
+
+# we expand the term above in such a way to reduce the number of inversions, which are slow
+   w1EmEn = im*w1+Em-En
+   w2EnEo = im*w2+En-Eo
+   w3EoEp = im*w3+Eo-Ep
+   w2w3EnEp = im*w2+im*w3+En-Ep
+   w1w2EmEo = im*w1+im*w2+Em-Eo
+   w1w2w3EmEp = im*w1+im*w2+im*w3+Em-Ep
+
+   # 2 inversions
+   #return (expEop*w2w3EnEp + expEnp*w3EoEp)/(w1EmEn*w2EnEo*w3EoEp*w2w3EnEp) - (expEop*w1w2w3EmEp - expEmp*w3EoEp)/(w1EmEn*w1w2EmEo*w3EoEp*w1w2w3EmEp)
+
+   # 1 inversion, the fastest by far!
+   return ( (expEop*w2w3EnEp + expEnp*w3EoEp)*w1w2EmEo*w1w2w3EmEp - (expEop*w1w2w3EmEp - expEmp*w3EoEp)*w2EnEo*w2w3EnEp ) / (w1EmEn*w2EnEo*w3EoEp*w2w3EnEp*w1w2EmEo*w1w2w3EmEp )
+
 end
 
 #####################################################
