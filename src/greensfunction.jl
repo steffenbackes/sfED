@@ -150,7 +150,12 @@ function getFuckingLarge2partTerm(w1::Float32,w2::Float32,w3::Float32,
    #return (expEop*w2w3EnEp + expEnp*w3EoEp)/(w1EmEn*w2EnEo*w3EoEp*w2w3EnEp) - (expEop*w1w2w3EmEp - expEmp*w3EoEp)/(w1EmEn*w1w2EmEo*w3EoEp*w1w2w3EmEp)
 
    # 1 inversion, the fastest by far!
-   return ( (expEop*w2w3EnEp + expEnp*w3EoEp)*w1w2EmEo*w1w2w3EmEp - (expEop*w1w2w3EmEp - expEmp*w3EoEp)*w2EnEo*w2w3EnEp ) / (w1EmEn*w2EnEo*w3EoEp*w2w3EnEp*w1w2EmEo*w1w2w3EmEp )
+   #return ( (expEop*w2w3EnEp + expEnp*w3EoEp)*w1w2EmEo*w1w2w3EmEp - (expEop*w1w2w3EmEp - expEmp*w3EoEp)*w2EnEo*w2w3EnEp ) / (w1EmEn*w2EnEo*w3EoEp*w2w3EnEp*w1w2EmEo*w1w2w3EmEp )
+
+   # even faster!!
+   nomin = (expEop*w2w3EnEp + expEnp*w3EoEp)*w1w2EmEo*w1w2w3EmEp - (expEop*w1w2w3EmEp - expEmp*w3EoEp)*w2EnEo*w2w3EnEp
+   denom = w1EmEn*w2EnEo*w3EoEp*w2w3EnEp*w1w2EmEo*w1w2w3EmEp
+   return (nomin*( real(denom)-im*imag(denom) ) )/(real(denom)^2+imag(denom)^2) 
 
 end
 
