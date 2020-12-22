@@ -256,11 +256,12 @@ We choose the definition G^(2)_up,dn = <T c^dag_up(t1) c_up(t2) c^dag_dn(t3) c_d
 """
 function getGF2part(transitions::Array{Transitions,1},   # two for each flavor
                     Z::Float64,
-                    pFreq::FrequencyMeshes,nw::Int64,
+                    wlist,
                     pNumerics::NumericalParameters)::TwoParticleFunction        #Tuple{TwoParticleFunction,Array{Float64,2}}
 
    # we restrict this calculation to one orbital !
-   println("Generating the two-particle GF on ",nw,"^3 frequencies...")
+   nw = length(wlist)
+   println("Generating the two-particle GF on ",nw," frequencies...")
    #evalContributions = Array{Float64}(undef, (length(evallist), 4) ) REIMPLEMENT THIS ASAP
    ## prefill the evalContributions array
    #for m=1:length(evallist)
@@ -271,12 +272,12 @@ function getGF2part(transitions::Array{Transitions,1},   # two for each flavor
    #   evalContributions[m,:] = [Nm,Sm,Em,0.0]
    #end
    
-   w123 = [ (pFreq.iwf[i],pFreq.iwf[j],pFreq.iwf[k]) for i=1:nw, j=1:nw , k=1:nw ]
-   w213 = [ (pFreq.iwf[j],pFreq.iwf[i],pFreq.iwf[k]) for i=1:nw, j=1:nw , k=1:nw ]
-   w231 = [ (pFreq.iwf[j],pFreq.iwf[k],pFreq.iwf[i]) for i=1:nw, j=1:nw , k=1:nw ]
-   w321 = [ (pFreq.iwf[k],pFreq.iwf[j],pFreq.iwf[i]) for i=1:nw, j=1:nw , k=1:nw ]
-   w132 = [ (pFreq.iwf[i],pFreq.iwf[k],pFreq.iwf[j]) for i=1:nw, j=1:nw , k=1:nw ]
-   w312 = [ (pFreq.iwf[k],pFreq.iwf[i],pFreq.iwf[j]) for i=1:nw, j=1:nw , k=1:nw ]
+   w123 = [ (wlist[i][1],wlist[i][2],wlist[i][3]) for i=1:nw ]
+   w213 = [ (wlist[i][2],wlist[i][1],wlist[i][3]) for i=1:nw ]
+   w231 = [ (wlist[i][2],wlist[i][3],wlist[i][1]) for i=1:nw ]
+   w321 = [ (wlist[i][3],wlist[i][2],wlist[i][1]) for i=1:nw ]
+   w132 = [ (wlist[i][1],wlist[i][3],wlist[i][2]) for i=1:nw ]
+   w312 = [ (wlist[i][3],wlist[i][1],wlist[i][2]) for i=1:nw ]
 
    gf,gfnorm =(.-getGF2partTerm(transitions[1],transitions[2],transitions[3],transitions[4],w123,pNumerics)
                .+getGF2partTerm(transitions[2],transitions[1],transitions[3],transitions[4],w213,pNumerics)

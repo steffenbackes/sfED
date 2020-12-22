@@ -3,21 +3,21 @@ __precompile__(false)
 
 export example_run, noSpinConfig
 
-using LinearAlgebra
-using SparseArrays
-using Printf
-using Random
+@everywhere using LinearAlgebra
+@everywhere using SparseArrays
+@everywhere using Printf
+@everywhere using Random
 #using Profile
 
-include("params.jl")
-include("states.jl")
-include("hamiltonian.jl")
-include("ccdagger.jl")
-include("transitions.jl")
-include("greensfunction.jl")
-include("IO.jl")
+@everywhere include("params.jl")
+@everywhere include("states.jl")
+@everywhere include("hamiltonian.jl")
+@everywhere include("ccdagger.jl")
+@everywhere include("transitions.jl")
+@everywhere include("greensfunction.jl")
+@everywhere include("IO.jl")
 
-function example_run()
+@everywhere function example_run()
    norb = 5
    U = 2.0 
    J = 0.0
@@ -81,7 +81,28 @@ function example_run()
    println("Determining overlaps between eigenvectors for 2partGF...")
    transitions2pGF = get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
    println("Create interacting two-particle Green's function...")
-   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,7,pNumerics)
+
+   ## parallel call for 2part Green's function, to be finalized###################################
+   nw2part=14
+   wlist = [ (pFreq.iwf[i],pFreq.iwf[j],pFreq.iwf[k]) for i=1:nw2part, j=1:nw2part , k=1:nw2part ]
+
+   nworkers = nprocs()-1
+   nwperworker = ceil(Int64, nw2part^3/nworkers )
+   splitwlist = [ wlist[(i-1)*nwperworker+1:min(i*nwperworker,end)] for i=1:nworkers  ]
+
+   #PMAP ##########
+#   gf2part_para = pmap( x->getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),x,pNumerics), splitwlist )
+#   gf2part = vcat(gf2part_para...)
+   #####################
+
+   # REMOTECALL##
+   fetcher = []
+   for i =1:nworkers
+      push!(fetcher, remotecall(x->getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),x,pNumerics), i+1, splitwlist[i]  ))
+   end
+   gf2part = vcat(fetch.(fetcher)...)
+   ##################################################################################
+
    writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
 #  writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
