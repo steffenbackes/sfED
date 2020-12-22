@@ -19,12 +19,12 @@ include("IO.jl")
 
 function example_run()
    norb = 5
-   U = 1.0 
+   U = 2.0 
    J = 0.0
    Up = 0 #U-2*J
    t = 1.0
    mu = (U+Up+Up-J)/2      # half filling
-   beta = 25.0
+   beta = 11.0
    aim = 1
    gf_flav = [1]
    #gf_flav = [2*m-1 for m in 1:norb]
@@ -81,12 +81,12 @@ function example_run()
    println("Determining overlaps between eigenvectors for 2partGF...")
    transitions2pGF = get2pGFTransitions(1,eigenspace,fockstates,pSimulation.beta,pNumerics)   # contains list of possible transitions
    println("Create interacting two-particle Green's function...")
-   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,5,pNumerics)
+   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),pFreq,7,pNumerics)
    writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
 #  writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
-
 #   Profile.print()
+
    end # end example function
 end
 #example_run()

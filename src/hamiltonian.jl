@@ -15,11 +15,17 @@ function getEps(fockstates::Fockstates, pNumerics::NumericalParameters)
 
    if fockstates.norb==5  # Use Julian's AIM benchmark system
       for s=1:2
+      #beta=11
          eps[2*0+s] = 0.0
-         eps[2*1+s] = 1.0387225695696338   
-         eps[2*2+s] = 0.14264424358261263  
-         eps[2*3+s] = -1.0387225695696338  
-         eps[2*4+s] = -0.14264424358261263 
+         eps[2*1+s] = 1.03583054366269
+         eps[2*2+s] = 0.178882722915798  
+         eps[2*3+s] = -1.03583054366269 
+         eps[2*4+s] = -0.178882722915798 
+         #beta = 10
+         #eps[2*1+s] = 1.03530343377897
+         #eps[2*2+s] = 0.175195925728476  
+         #eps[2*3+s] = -1.03530343377897  
+         #eps[2*4+s] = -0.175195925728476 
       end
    end
 
@@ -57,10 +63,16 @@ function getTmatrix(fockstates::Fockstates,pSimulation::SimulationParameters)
 #                  0 t t 0]
    elseif fockstates.norb==5
       # Use Julian's AIM benchmark system
-      t1 = 0.27400603088302322
-      t2 = 0.22567506210351471
-      t3 = 0.27400603088302322
-      t4 = 0.22567506210351471
+      # beta=11
+      t1 = 0.302313674983807
+      t2 = 0.154603780668397
+      t3 = 0.302313674983807
+      t4 = 0.154603780668397
+      #beta = 10
+      #t1 = 0.304118914651299
+      #t2 = 0.152049589882341
+      #t3 = 0.304118914651299
+      #t4 = 0.152049589882341
       tmatrix =  [0 t1 t2 t3 t4;
                   t1 0 0 0 0;
                   t2 0 0 0 0;
