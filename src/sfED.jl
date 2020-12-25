@@ -1,7 +1,7 @@
-module sfED
-__precompile__(false)
+#module sfED
+#__precompile__(false)
 
-export example_run, noSpinConfig
+#export example_run, noSpinConfig
 
 @everywhere using LinearAlgebra
 @everywhere using SparseArrays
@@ -83,7 +83,7 @@ export example_run, noSpinConfig
    println("Create interacting two-particle Green's function...")
 
    ## parallel call for 2part Green's function, to be finalized###################################
-   nw2part=14
+   nw2part=7
    wlist = [ (pFreq.iwf[i],pFreq.iwf[j],pFreq.iwf[k]) for i=1:nw2part, j=1:nw2part , k=1:nw2part ]
 
    nworkers = nprocs()-1
@@ -96,18 +96,27 @@ export example_run, noSpinConfig
    #####################
 
    # REMOTECALL##
-   fetcher = []
-   for i =1:nworkers
-      push!(fetcher, remotecall(x->getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),x,pNumerics), i+1, splitwlist[i]  ))
-   end
-   gf2part = vcat(fetch.(fetcher)...)
+   println("I am worker ",myid())
+   gf2part = getGF2part(transitions2pGF,getZ(eigenspace,pSimulation.beta),splitwlist[myid()-1],pNumerics)
    ##################################################################################
 
-   writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
+   return gf2part
+#   writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
 #  writeEvalContributionsSectors("eval2partContributionsSectors.dat", evalContributions)
 #  writeEvalContributions("eval2partContributions.dat", evalContributions)
 #   Profile.print()
 
    end # end example function
-end
+#end
 #example_run()
+
+nworkers = nprocs()-1
+fetcher = []
+for i =1:nworkers
+   println("Sending job to worker ",i)
+   flush(stdout)
+   push!(fetcher, remotecall(()->example_run(), i+1  ))
+end
+gf2part = vcat(fetch.(fetcher)...)
+writeGF2part("gf2part_w1w2.dat",   gf2part,   pFreq.iwf)
+
