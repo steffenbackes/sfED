@@ -128,6 +128,24 @@ function writeEvalInfo(io::IO, eigenspace::Eigenspace,
    end
 end
 
+"""
+    writeParticleNumbers(n_ms)
+
+Write the occupation numbers
+"""
+function writeParticleNumbers(io::IO, n_ms::Array{Float64,1})
+   norb = Int64(length(n_ms)/2)
+   println("Occupation numbers:")
+   updn = ["up","dn"]
+   for s=1:2
+      @printf(io,"%s: ",updn[s])
+      for m=0:norb-1
+         @printf(io, "%7.5f  ", n_ms[2*m+s])
+      end
+      @printf(io,"\n")
+   end
+   @printf(io,"N_tot = %8.5f \n",sum(n_ms))
+end
 
 
 """
@@ -248,7 +266,7 @@ end
 
 
 # ========================= Boilerplate Generator =========================
-io_functions = (:writeMatrixGnuplot, :writeGF, :writeGF2part, :writeStateInfo, :writeEvalInfo, :writeEvalContributionsSectors, :writeEvalContributions, :writeGFnorm, :writeTransitionsOverlaps)
+io_functions = (:writeMatrixGnuplot, :writeGF, :writeGF2part, :writeStateInfo, :writeEvalInfo, :writeEvalContributionsSectors, :writeEvalContributions, :writeGFnorm, :writeTransitionsOverlaps, :writeParticleNumbers)
 
 # For all write functions f(io::IO, args...) generate wrappers f(args...) which writes
 # directly to stdout and f(s::String, args...) which opens/closes a file and writes to it.

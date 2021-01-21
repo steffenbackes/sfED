@@ -59,6 +59,7 @@ function example_run()
    eigenspace = Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation,fockstates,pNumerics)   # Setup Hamiltonian and solve it, result is ordered by N,S
    println("Groundstate energy E0=", eigenspace.E0 )
    println("Partition function Z=",getZ(eigenspace,pSimulation.beta) )
+   writeParticleNumbers( getN(eigenspace,pSimulation.beta,fockstates) )
    writeEvalInfo(eigenspace,fockstates)
 
    println("Determining overlaps between eigenvectors for 1partGF...")

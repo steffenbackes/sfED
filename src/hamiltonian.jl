@@ -458,3 +458,25 @@ function getZ(eigenspace::Eigenspace, beta::Float64)
    evals = [ e for nse in eigenspace.evals for se in nse for e in se  ]
    return sum( exp.( -beta .*( evals .- eigenspace.E0) ) )
 end
+
+"""
+    getN(eigenspace)
+
+Calculate expectation value of occupation
+"""
+function getN(eigenspace::Eigenspace, beta::Float64, fockstates::Fockstates)
+   Nmax = fockstates.norb*2
+   Z = getZ(eigenspace, beta)
+   n_ms = zeros(Float64,fockstates.norb*2)  # Filling per orbital and spin
+   for n=0:Nmax
+      for s=1:noSpinConfig(n,Nmax)
+         dim = length(eigenspace.evals[n+1][s])
+         for i=1:dim
+            for j=1:dim
+               n_ms += abs(eigenspace.evecs[n+1][s][i][j])^2 .* fockstates.states[n+1][s][j] * exp(-beta*(eigenspace.evals[n+1][s][i]-eigenspace.E0))
+            end
+         end # i
+      end # s
+   end # n
+   return n_ms/Z
+end
