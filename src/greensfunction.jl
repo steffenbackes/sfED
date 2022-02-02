@@ -82,8 +82,15 @@ function getGF(transitions::Array{Transitions,1},   # two for each flavor
 
                for a=1:b # only upper triangular part
                   # the transition <1|c_a|2> is completely fixed by knowing <2|c^dag_b|1>, just look up the overlap if there exists one
+                  # c_a brings us back to the right particle number sector
+                  # but we need to check whether it's the right spin sector, which means a,b have both be either odd or even (i.e. both up or down)
+                  # i.e. a+b is always even, so we conserve spin
+                  # otherwise <c_up c*_dn> will give a finite contribution
+                  # This should be improved, for now it's a sketchy fix
+                  # THIS NEEDS TO BE CHECKED FOR 2PART GF AS WELL!!
+                        
                   it = get( transitions[2*a-0].dictFromTo[n2+1][s2], (ito,ifrom) , 0 )
-                  if (it>0 )
+                  if (it>0 && (a+b)%2==0 )
 
                      ovrlp = (exp(-beta*Efrom)+exp(-beta*Eto))*transitions[2*a-0].transitions[n2+1][s2][it].overlap*overlapb      # <n1|c_a|n2> * <n2|cdag_b|n1>
 
