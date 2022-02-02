@@ -67,13 +67,13 @@ using Random
   @test eigenspace.E0≈-11.970698986594668
 #  @test sfED.getZ(eigenspace,beta)≈3.999466 too sensitive to small numerical noise
   @test gf_w[1,1,1]≈1.443111480195604 - 1.0092405021942121im
-  @test gf_w[1,2,1]≈3.398939920418041 - 1.7904547077641741im
+  @test gf_w[1,2,1]≈0.0 - 0.0im
   @test gf0_w[1,1,1]≈0.016925201388368408 - 0.02999886543056114im
-  @test sigma_w[1,1,1]≈1.7645875249931748 - 0.04735790731216562im
+  @test sigma_w[1,1,1]≈-0.4823152339213492 - 0.2954420743370195im
 #  @test sigma_w[1,2,1]≈-0.036084652+0.016054876*im # too sensitive to small noise
   @test imag(gf_iw[1,1,1])≈-0.055856137437407596
-  @test real(gf_iw[1,2,1])≈0.347005616923077
-  @test sigma_iw[1,1,1]≈1.5000002578085914 - 0.14937722133644293im
-  @test sigma_iw[1,2,1]≈-1.8451108180132667 - 7.271036332423471e-8im
+  @test real(gf_iw[1,2,1])≈0.0
+  @test sigma_iw[1,1,1]≈1.500021459227922 - 17.824595736475086im
+  @test sigma_iw[1,2,1]≈1.0 + 0.0im
 
 end
