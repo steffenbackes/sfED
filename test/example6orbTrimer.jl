@@ -1,6 +1,4 @@
-using Arpack
 using LinearAlgebra
-using SparseArrays
 using Random
 
 @testset "6-orbital trimer model" begin
@@ -14,7 +12,7 @@ using Random
    aim = 0
    gf_flav = [1,5]
 
-   pSimulation = sfED.SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, aim=aim, gf_flav=gf_flav)
+   pSimulation = sfED.ModelParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, aim=aim, gf_flav=gf_flav)
    pFreq = sfED.FrequencyMeshes(nw=1,
                            wmin=-1.5169661, wmax=1.0,
                            iwmax=2.0,
@@ -32,8 +30,8 @@ using Random
       eps[2*i+1] = 0.0*(-1)^i    # up spin
       eps[2*i+2] = eps[2*i+1]    #dn spin
       # add a very small random term to each local level to lift degeneracy and improve numerical stability
-      eps[2*i+1] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
-      eps[2*i+2] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
+      #eps[2*i+1] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
+      #eps[2*i+2] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
    end
    tmatrix = -[0 0 t 0 0 0;
                0 0 0 t 0 0;
@@ -66,16 +64,16 @@ using Random
    sigma_iw   = sfED.getSigma(gf0_iw,gf_iw)
   
   #################################
-  @test eigenspace.E0≈-11.970696
+  @test eigenspace.E0≈-11.970698986594668
 #  @test sfED.getZ(eigenspace,beta)≈3.999466 too sensitive to small numerical noise
-  @test gf_w[1,1,1]≈1.4431592-im*1.0092759
-  @test gf_w[1,2,1]≈3.3990114-im*1.7905190
-  @test gf0_w[1,1,1]≈0.016925674-0.029998865*im
-  @test sigma_w[1,1,1]≈1.7646194-im*0.047359131
+  @test gf_w[1,1,1]≈1.443111480195604 - 1.0092405021942121im
+  @test gf_w[1,2,1]≈3.398939920418041 - 1.7904547077641741im
+  @test gf0_w[1,1,1]≈0.016925201388368408 - 0.02999886543056114im
+  @test sigma_w[1,1,1]≈1.7645875249931748 - 0.04735790731216562im
 #  @test sigma_w[1,2,1]≈-0.036084652+0.016054876*im # too sensitive to small noise
-  @test imag(gf_iw[1,1,1])≈-0.055855915
-  @test real(gf_iw[1,2,1])≈3.4700558E-01
-  @test sigma_iw[1,1,1]≈1.5000614E+00-im*1.4937729E-01
-  @test sigma_iw[1,2,1]≈-1.8451134+1.074671e-5*im
+  @test imag(gf_iw[1,1,1])≈-0.055856137437407596
+  @test real(gf_iw[1,2,1])≈0.347005616923077
+  @test sigma_iw[1,1,1]≈1.5000002578085914 - 0.14937722133644293im
+  @test sigma_iw[1,2,1]≈-1.8451108180132667 - 7.271036332423471e-8im
 
 end

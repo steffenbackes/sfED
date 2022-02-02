@@ -230,7 +230,7 @@ end
 
 Write out the overlap elements between all Eigenstates acting on c/c^dagger
 """
-function writeTransitionsOverlaps(io::IO, overlaps::Array{Complex{Float32},3} )
+function writeTransitionsOverlaps(io::IO, overlaps::Array{Complex{Float64},3} )
    nstates = size(overlaps)[2]
    for n1 in 1:nstates
      for n2 in 1:nstates

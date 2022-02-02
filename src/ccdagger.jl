@@ -10,7 +10,7 @@ we act `subspace1` * c * `subspace2`
 now just determine the transformation when acting the annihilation operator `anni` on it
 `anni` is the orbital/spin index
 """
-function getCmatrix(     anni::Int64, 
+function getCmatrix(   anni::Int64, 
                        subspace1::Array{Fockstate,1}, 
                        subspace2::Array{Fockstate,1})::CAmatrix
    dim1 = length(subspace1)

@@ -1,4 +1,3 @@
-using SparseArrays
 
 @testset "basic properties" begin
     @test_throws DomainError sfED._nnmax(-1,1)

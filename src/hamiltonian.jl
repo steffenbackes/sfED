@@ -1,4 +1,4 @@
-const Hamiltonian = SparseMatrixCSC{Complex{Float32},Int64}   # matrix type for Hamiltonian matrix
+const Hamiltonian = SparseMatrixCSC{ComplexF64,Int64}   # matrix type for Hamiltonian matrix
 
 """
     getEps(pNumerics,pModel)
@@ -42,7 +42,7 @@ end
 Return the hoppingmatrix, defined by hand here
 TODO: this should be overloaded to accept text file or command line inputs.
 """
-function getTmatrix(fockstates::Fockstates,pSimulation::SimulationParameters)
+function getTmatrix(fockstates::Fockstates,pSimulation::ModelParameters)
    tmatrix = Array{Float64}(undef,fockstates.norb,fockstates.norb)
    t = pSimulation.t
    if fockstates.norb==2
@@ -110,7 +110,7 @@ end
 Return the Coulomb interaction matrices, defined by hand here
 TODO: this should be overloaded to accept text file or command line inputs.
 """
-function getUJmatrix(fockstates::Fockstates,pSimulation::SimulationParameters)
+function getUJmatrix(fockstates::Fockstates,pSimulation::ModelParameters)
    Umatrix = Array{Float64}(undef,fockstates.norb,fockstates.norb)
    Jmatrix = Array{Float64}(undef,fockstates.norb,fockstates.norb)
    U = pSimulation.U

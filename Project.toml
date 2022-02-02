@@ -1,7 +1,7 @@
 name = "sfED"
 uuid = "60459bc9-caed-49ad-958d-c1bd89671d10"
-authors = ["Julian Stobbe <Atomtomate@gmx.de>"]
-version = "0.1.0"
+authors = ["Steffen Backes <>", "Julian Stobbe <Atomtomate@gmx.de>"]
+version = "0.1.1"
 
 [deps]
 Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"

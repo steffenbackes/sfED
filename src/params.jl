@@ -1,25 +1,49 @@
 #typedefs
-const FrequencyMesh     = Array{Float32,1}
-const FrequencyMeshCplx = Array{Complex{Float32},1}
+const FrequencyMesh     = Array{Float64,1}
+
+const FrequencyMeshCplx = Array{Complex{Float64},1}
 
 # parameter structs #####################################################
 
-struct SimulationParameters
-   U      ::Float64        # local Hubbard interaction
-   J      ::Float64        # local Hund's coupling
-   Up     ::Float64        # interorbital Hubbard interaction=U-2*J
-   t      ::Float64        # hopping parameter (positive)
-   mu     ::Float64        # chemical potential
-   beta   ::Float64        # inverse temperature
-   aim    ::Int64        # Anderson IMpurity model: if equal one, apply chemical potential only to first orbital (rest is considered as bath)
-   gf_flav::Array{Int64,1} # flavors (orb/spin) for which the Green's function is calculated (full matrix flav x flav)
+"""
+    ModelParameters
+
+Fields
+-------------
+- **`U`**       : local Hubbard interaction
+- **`J`**       : local Hund's coupling
+- **`Up`**      : interorbital Hubbard interaction=U-2*J
+- **`t`**       : hopping parameter (positive)
+- **`mu`**      : chemical potential
+- **`beta`**    : inverse temperature
+- **`aim`**     : Anderson IMpurity model: if equal one, apply chemical potential only to first orbital (rest is considered as bath)
+- **`gf_flav`** : flavors (orb/spin) for which the Green's function is calculated (full matrix flav x flav)
+"""
+struct ModelParameters
+   U      ::Float64
+   J      ::Float64
+   Up     ::Float64
+   t      ::Float64
+   mu     ::Float64
+   beta   ::Float64
+   aim    ::Int64
+   gf_flav::Array{Int64,1}
 end
 
-SimulationParameters(;U,J,Up=U-2*J,t,mu,beta,aim,gf_flav) = SimulationParameters(U,J,Up,t,mu,beta,aim,gf_flav)
+ModelParameters(;U,J,Up=U-2*J,t,mu,beta,aim,gf_flav) = ModelParameters(U,J,Up,t,mu,beta,aim,gf_flav)
 
+
+"""
+    NumericalParameters
+
+Fields
+-------------
+- **`delta`**  : broadening parameter, we work above the real axis at w+im*delta
+- **`cutoff`** : numerical cutoff for things like Boltzmann weights or other things
+"""
 struct NumericalParameters
-   delta            ::Float32   # broadening parameter, we work above the real axis at w+im*delta
-   cutoff           ::Float32   # numerical cutoff for things like Boltzmann weights or other things
+   delta            ::Float64
+   cutoff           ::Float64
 
    NumericalParameters(;delta,cutoff) = new(delta,cutoff)
 end
@@ -35,7 +59,7 @@ struct FrequencyMeshes
    ivf::FrequencyMesh # frequency mesh
 
    FrequencyMeshes(;nw,wmin,wmax,iwmax,beta) = nw>0 ? new( [wmin+n*(wmax-wmin)/nw for n=0:nw-1], 
-                                                      [(2*n+1)*pi/beta for n=0:round(Int32, (iwmax*beta/pi-1)/2)-1],
-                                                      [(2*n+0)*pi/beta for n=0:round(Int32, (iwmax*beta/pi-1)/2) ] ) :
+                                                      [(2*n+1)*pi/beta for n=0:round(Int64, (iwmax*beta/pi-1)/2)-1],
+                                                      [(2*n+0)*pi/beta for n=0:round(Int64, (iwmax*beta/pi-1)/2) ] ) :
                                                  throw(ArgumentError("nw=$nw has to be larger than zero!"))
 end

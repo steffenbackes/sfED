@@ -2,41 +2,77 @@ const FockElement = Int8                                  # one number element o
 const Fockstate   = Array{FockElement,1}                  # The standard Fock state e.g. [00101011] 
 const NSstates    = Array{Array{Array{Fockstate,1},1},1}  # An array of arrays for all Fock states for Quantum numbers N,S: typeof( allstates[N][S][i] )=Fockstate
 
-const Eigenvalue        = Float32             
-const EigenvectorElem   = Complex{Float32}
+const Eigenvalue        = Float64             
+const EigenvectorElem   = Complex{Float64}
 const Eigenvector       = Array{EigenvectorElem,1}
 const EigenvectorMatrix = Array{EigenvectorElem,2}
 
+"""
+    Fockstates
+
+Fields
+-------------
+- **`Nstates`** :
+- **`norb`**    :
+- **`states`**  : An array of arrays for all Fock states for Quantum numbers N,S: typeof( allstates[N][S][i] )=Fockstate, states[n][s][i]  (electron number, spin index, i-th state in NS block)
+"""
 struct Fockstates
-   Nstates    ::Int64
-   norb       ::Int64
-
-   states::NSstates   # states[n][s][i]  (electron number, spin index, i-th state in NS block)
+    Nstates::Int64
+    norb::Int64
+    states::NSstates
+    function Fockstates(; norb::Int64)
+        Nstates=4^norb
+        Nmax=2*norb
+        allstates = generateStates(Nmax,Nstates)
+        new(Nstates, norb, allstates)
+    end
 end
 
+"""
+    Eigenspace
+
+Fields
+-------------
+- **`Nstates`** :
+- **`norb`**    :
+- **`E0`**      :
+- **`evals`**   :
+- **`evecs`**   :
+"""
 struct Eigenspace
-   Nstates    ::Int64 
-   norb       ::Int64
-   E0         ::Eigenvalue
+    Nstates    ::Int64 
+    norb       ::Int64
+    E0         ::Eigenvalue
 
-   evals::Array{Array{Array{Eigenvalue,1},1},1}       # n,s,i
-   evecs::Array{Array{Array{Eigenvector,1},1},1}      # n,s,i
+    evals::Array{Array{Array{Eigenvalue,1},1},1}       # n,s,i
+    evecs::Array{Array{Array{Eigenvector,1},1},1}      # n,s,i
 end
 
-# ============================ Comments ============================
-#   
-#
-#
-# ======================= Auxilliary Function =======================
+"""
+    Eigenspace(eps::Array{Float64,1},tmatrix::Array{Float64,2},
+                    Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
+                    pSimulation::ModelParameters,
+                    fockstates::Fockstates,
+                    pNumerics::NumericalParameters)
 
-function _nnmax(n::Int64, Nmax::Int64)::Int64
-   n >= 0 || throw(DomainError(n, "argument n must be nonnegative")) 
-   Nmax >= 0 || throw(DomainError(Nmax, "argument Nmax must be nonnegative")) 
-   n <= Nmax || throw(DomainError(n-Nmax, "n must be smaller than Nmax")) 
-   return Nmax/2-abs(n-Nmax/2)
+Constructor for the Eigenspace struct
+"""
+function Eigenspace(eps::Array{Float64,1},tmatrix::Array{Float64,2},
+                    Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
+                    pSimulation::ModelParameters,
+                    fockstates::Fockstates,
+                    pNumerics::NumericalParameters)
+    Nstates=fockstates.Nstates
+    norb=fockstates.norb
+    evals,evecs = getEvalveclist(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,pSimulation.aim,fockstates,pNumerics)
+    E0 = minimum([ e for nse in evals for se in nse for e in se  ])
+
+    return Eigenspace(Nstates,norb,E0,evals,evecs)
 end
 
-# ========================= Main Functions =========================
+################################################################################
+#                                 Main Functions                               #
+################################################################################
 
 """
     noSpinConfig(n, Nmax)
@@ -114,53 +150,24 @@ return the sign when creating/annihilating an electron at position `i` in `state
 """
 @inline getCsign(i::Int64,state::Fockstate) = 1-2*(sum(state[1:i-1])%2)
 
-#####################################################################
+
+
+################################################################################
+#                               Auxilliary Function                            #
+################################################################################
 
 """
-   Fockstates(norb)
-Constructor for the Fockstates struct
+    generateStates(Nmax::Int64, Nstates::Int64)
+
+Creates the array that stores all states as an integer array sorted by N,S quantum numbers
 """
-function Fockstates(; norb )
-   norb=norb
-   Nstates=4^norb
-
-   Nmax=2*norb
-   allstates = generateStates(Nmax,Nstates)
-
-   return Fockstates(Nstates,norb,allstates)
-end
-
-#####################################################################
-
-"""
-   Eigenspace(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,fockstates,pNumerics)
-Constructor for the Eigenspace struct
-"""
-function Eigenspace(eps::Array{Float64,1},tmatrix::Array{Float64,2},
-                    Umatrix::Array{Float64,2},Jmatrix::Array{Float64,2},
-                    pSimulation::SimulationParameters,
-                    fockstates::Fockstates,
-                    pNumerics::NumericalParameters)
-   Nstates=fockstates.Nstates
-   norb=fockstates.norb
-
-   evals,evecs = getEvalveclist(eps,tmatrix,Umatrix,Jmatrix,pSimulation.mu,pSimulation.aim,fockstates,pNumerics)
-   E0 = minimum([ e for nse in evals for se in nse for e in se  ])
-
-   return Eigenspace(Nstates,norb,E0,evals,evecs)
-end
-
-
-
-########################################################################
-# Here we create the array that stores all states as an integer array sorted by N,S quantum numbers
-function generateStates(Nmax::Int64,Nstates::Int64)
+function generateStates(Nmax::Int64, Nstates::Int64)
    # Create an empty list that will store all states, sorted for given particle number and spin
-   allstates::NSstates = []
+   allstates::NSstates = NSstates[]
    for n=0:Nmax
-      push!( allstates, [] )
+      push!(allstates, [])
       for j=1:noSpinConfig(n,Nmax)
-         push!( allstates[n+1], [] )
+         push!(allstates[n+1], [])
       end
    end # n
    
@@ -179,5 +186,11 @@ function generateStates(Nmax::Int64,Nstates::Int64)
    return allstates
 end
 
+function _nnmax(n::Int64, Nmax::Int64)::Int64
+   n >= 0 || throw(DomainError(n, "argument n must be nonnegative")) 
+   Nmax >= 0 || throw(DomainError(Nmax, "argument Nmax must be nonnegative")) 
+   n <= Nmax || throw(DomainError(n-Nmax, "n must be smaller than Nmax")) 
+   return Nmax/2-abs(n-Nmax/2)
+end
 
 

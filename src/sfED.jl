@@ -29,7 +29,7 @@ function example_run()
    gf_flav = [1]
    #gf_flav = [2*m-1 for m in 1:norb]
 
-   pSimulation = SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, aim=aim, gf_flav=gf_flav)
+   pSimulation = ModelParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, aim=aim, gf_flav=gf_flav)
    pFreq = FrequencyMeshes(nw=501,
                            wmin=-8.0, wmax=8.0,
                            iwmax=80.0,

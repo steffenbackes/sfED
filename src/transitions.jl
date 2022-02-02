@@ -1,21 +1,41 @@
+"""
+    Transition
+
+Fields
+-------------
+- **`iFromTo`**     :
+- **`nFromTo`**     :
+- **`sFromTo`**     :
+- **`EvalFromTo`**  :
+- **`ExpFromTo`**   :
+- **`overlap`**     :
+"""
 struct Transition
    iFromTo   ::Array{Int64,1}    # [index_from, index_to]
    nFromTo   ::Array{Int64,1}    # particle number from-to
    sFromTo   ::Array{Int64,1}    # spin-index from-to
    EvalFromTo::Array{Eigenvalue,1}
-   ExpFromTo::Array{Float32,1}
-   overlap   ::Complex{Float32}
+   ExpFromTo::Array{Float64,1}
+   overlap   ::Complex{Float64}
 end
 
-struct Transitions
-   transitions::Array{Array{Array{Transition,1},1},1}       # n,s,i from
-   dictFromTo ::Array{Array{Dict{Tuple{Int64,Int64},Int64},1},1} # Dictionary returning the index in the N,S block for specific transiton (from,to)
-   dictFrom   ::Array{Array{Dict{Int64,UnitRange{Int64}},1},1}   # Dictionary returning the range  of transitions which start from "from" ->any
-end
-
-## Main functions & constructors ###############################################
 """
-    getPossibleTransitions(eigenspace,fockstates,flavors,pNumerics,expCutoff)
+    Transitions
+
+Fields
+-------------
+- **`transitions`** : n,s,i from
+- **`dictFromTo`**  : Dictionary returning the index in the N,S block for specific transiton (from,to)
+- **`dictFrom`**    : Dictionary returning the range  of transitions which start from "from" ->any
+"""
+struct Transitions
+   transitions::Array{Array{Array{Transition,1},1},1}
+   dictFromTo ::Array{Array{Dict{Tuple{Int64,Int64},Int64},1},1}
+   dictFrom   ::Array{Array{Dict{Int64,UnitRange{Int64}},1},1}
+end
+
+"""
+    Transitions(eigenspace,fockstates,flavors,pNumerics,expCutoff)
 
 Calculate the overlap elements between all Eigenstates acting on c/c^dagger specified by flavors.
 The function returns the overlap array and possibleTransitions for cdagger,c for 
@@ -97,7 +117,11 @@ function Transitions(flavor::Int64,
    return Transitions(transitions,dictFromTo,dictFrom)
 end
 
-#########################################################################################
+
+################################################################################
+#                               Auxilliary Function                            #
+################################################################################
+
 function get1pGFTransitions(flavors::Array{Int64,1},
                      eigenspace::Eigenspace,
                      fockstates::Fockstates,
@@ -112,7 +136,6 @@ function get1pGFTransitions(flavors::Array{Int64,1},
    println("\rdone!")
    return transitions
 end
-#################
 
 function get2pGFTransitions(flavor::Int64,
                             eigenspace::Eigenspace,
@@ -129,4 +152,3 @@ function get2pGFTransitions(flavor::Int64,
    println("\rdone!")
    return transitions
 end
-

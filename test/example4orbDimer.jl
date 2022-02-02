@@ -1,6 +1,4 @@
-using Arpack
 using LinearAlgebra
-using SparseArrays
 using Random
 
 @testset "4-orbital dimer model" begin
@@ -14,7 +12,7 @@ using Random
    aim = 0
    gf_flav = [1]
 
-   pSimulation = sfED.SimulationParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, aim=aim, gf_flav=gf_flav)
+   pSimulation = sfED.ModelParameters(U=U,Up=Up,J=J,t=t,mu=mu, beta=beta, aim=aim, gf_flav=gf_flav)
    pFreq = sfED.FrequencyMeshes(nw=1,
                            wmin=0.68662673, wmax=1.0,
                            iwmax=2.0,
@@ -34,8 +32,8 @@ using Random
       eps[2*i+1] = 1.0*(-1)^i    # up spin
       eps[2*i+2] = eps[2*i+1]    #dn spin
       # add a very small random term to each local level to lift degeneracy and improve numerical stability
-      eps[2*i+1] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
-      eps[2*i+2] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
+      #eps[2*i+1] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
+      #eps[2*i+2] += rand([-1,1]) * rand(Float64) * pNumerics.cutoff
    end
    tmatrix = -[0 0 t 0;
                0 0 0 t;
@@ -61,8 +59,8 @@ using Random
    sigma_iw   = sfED.getSigma(gf0_iw,gf_iw)
   
   #################################
-  @test eigenspace.E0≈-13.084236
-  @test gf_w[1,1,1]≈-2.7259717-0.57595420*im
-  @test gf0_w[1,1,1]≈0.29096091-im*2.5399411e-03
-  @test sigma_w[1,1,1]≈3.7877913-im*4.4195615E-02
+  @test eigenspace.E0≈-13.084235483757716
+  @test gf_w[1,1,1]≈-2.725972250300734 - 0.5759743105101786im
+  @test gf0_w[1,1,1]≈0.2909608404879651 - 0.002539939859758628im
+  @test sigma_w[1,1,1]≈3.7877909374801164 - 0.044197953503341575im
 end

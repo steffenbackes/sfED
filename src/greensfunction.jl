@@ -1,5 +1,5 @@
-const SingleParticleFunction = Array{Complex{Float32},3}
-const TwoParticleFunction = Array{Complex{Float32},1}  # single orbital for now, depends on 3 frequencies but put into a linear array
+const SingleParticleFunction = Array{Complex{Float64},3}
+const TwoParticleFunction = Array{Complex{Float64},1}  # single orbital for now, depends on 3 frequencies but put into a linear array
 
 
 ########################################################################
@@ -11,7 +11,7 @@ hoppings between sites `i` and `j`, `tmatrix` and Matsubara grid `w`.
 """
 function getG0(        eps::Array{Float64,1},
                    tmatrix::Array{Float64,2},  
-               pSimulation::SimulationParameters,
+               pSimulation::ModelParameters,
                          w::FrequencyMeshCplx )::SingleParticleFunction
    nflav=length(pSimulation.gf_flav)
    nw = length(w)
@@ -44,7 +44,7 @@ Since we have spin degeneracy, we only calculate the up GF, so we annihilate one
 """
 function getGF(transitions::Array{Transitions,1},   # two for each flavor
                Z::Float64,
-               pSimulation::SimulationParameters,
+               pSimulation::ModelParameters,
                pFreq::FrequencyMeshes,
                pNumerics::NumericalParameters)::Tuple{SingleParticleFunction,SingleParticleFunction} #,Array{Float64,2}}
 
@@ -130,9 +130,9 @@ end
     getFuckingLarge2partTerm(w1,w2,w3,Em,En,Eo,Ep)
 Evaluate the Lehmann term for the 2part Green's function
 """
-function getFuckingLarge2partTerm(w1::Float32,w2::Float32,w3::Float32,
+function getFuckingLarge2partTerm(w1::Float64,w2::Float64,w3::Float64,
                                   Em::Eigenvalue,En::Eigenvalue,Eo::Eigenvalue,Ep::Eigenvalue,
-                                  expEop::Float32,expEnp::Float32,expEmp::Float32)::Complex{Float32}
+                                  expEop::Float64,expEnp::Float64,expEmp::Float64)::ComplexF64
 
 #   return (  ( expEop/(im*w3+Eo-Ep) + expEnp/(im*w2+im*w3+En-Ep) )/(im*w2+En-Eo)  
 #            -( expEop/(im*w3+Eo-Ep) - expEmp/(im*w1+(im*w2+im*w3+Em-Ep)) )/(im*w1+(im*w2+Em-Eo))
@@ -171,10 +171,10 @@ function getGF2partTerm(transitionNtoM::Transitions,
                         transitionPtoO::Transitions,
                         transitionMtoP::Transitions,
                         wlist,
-                        pNumerics::NumericalParameters)::Tuple{TwoParticleFunction, Float32 }
+                        pNumerics::NumericalParameters)::Tuple{TwoParticleFunction, Float64 }
 
-   gfnorm::Float32 = 0.0
-   gfterm = zeros(Complex{Float32},length(wlist))
+   gfnorm::Float64 = 0.0
+   gfterm = zeros(ComplexF64,length(wlist))
    Nmax=length(transitionMtoP.transitions)-1
 
    counter::Int128 = 0
@@ -219,7 +219,6 @@ function getGF2partTerm(transitionNtoM::Transitions,
       
                   # Apply exp cutoff
                   if expEop + expEnp + expEmp > pNumerics.cutoff
-      
                      # now pick out the <m|c|n> transitions that have n=nstate AND m=mstate since we need to go back
                      indexNtoMstate = get( transitionNtoM.dictFromTo[nn+1][sn], (nstate,mstate) , 0 )
                      if (indexNtoMstate>0 )
