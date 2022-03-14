@@ -119,8 +119,8 @@ function writeEvalInfo(io::IO, eigenspace::Eigenspace,
       permV = sortperm( evstate, by=abs, rev=true )
       @printf(io, "E=%+10.5f, N=%3i, S=%+3i : ", E,N,S)
       # print the three largest contributions to the Eigenvector
-      for j=1:min(2,length(evstate))
-         @printf(io,  "%4.2f", abs(evstate[permV[j]])^2 ) 
+      for j=1:min(4,length(evstate))
+         @printf(io,  "%4.2f", sign(real(evstate[permV[j]])) * abs(evstate[permV[j]])^2 ) 
          print(io, "x",fockstates.states[N+1][is][permV[j]],"  ")
       end
       println(io, " ")
