@@ -149,6 +149,26 @@ end
 
 
 """
+    writeDoubleOccupations(nn_updn, nn_upup, nn_dndn)
+
+Write the double-occupation matrices for all orbitals
+"""
+function writeDoubleOccupations(io::IO, nn::Array{Float64,3})
+   println("Double Occupations (orbital-matrix):")
+   nntype = ["up-dn","up-up", "dn-dn"]
+   for i=1:Int64(length(nntype))
+      @printf(io,"%s: \n",nntype[i])
+      for m1=1:Int64(size(nn[i,:,:])[1])
+         for m2=1:Int64(size(nn[i,:,:])[2])
+            @printf(io, "%7.5f  ", nn[i,m1,m2])
+         end
+         @printf(io,"\n")
+      end
+   end
+end
+
+
+"""
     writeEvalContributionsSectors(filename, evalContributions)
 
 write the weight contribtions of each Eigenstate sorted by N,S quantum numbers
@@ -266,7 +286,7 @@ end
 
 
 # ========================= Boilerplate Generator =========================
-io_functions = (:writeMatrixGnuplot, :writeGF, :writeGF2part, :writeStateInfo, :writeEvalInfo, :writeEvalContributionsSectors, :writeEvalContributions, :writeGFnorm, :writeTransitionsOverlaps, :writeParticleNumbers)
+io_functions = (:writeMatrixGnuplot, :writeGF, :writeGF2part, :writeStateInfo, :writeEvalInfo, :writeEvalContributionsSectors, :writeEvalContributions, :writeGFnorm, :writeTransitionsOverlaps, :writeParticleNumbers, :writeDoubleOccupations)
 
 # For all write functions f(io::IO, args...) generate wrappers f(args...) which writes
 # directly to stdout and f(s::String, args...) which opens/closes a file and writes to it.

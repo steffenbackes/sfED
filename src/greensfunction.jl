@@ -68,11 +68,12 @@ function getGF(transitions::Array{Transitions,1},   # two for each flavor
    #end
 
    # now we loop over the remaining transitions:  # GF is defined as in the pdf docu:  # <n1| c_a |n2><n2| cdag_b |n1>
-   for b=1:length(pSimulation.gf_flav)          # flavor loop
+   for b=1:nflav          # flavor loop
+      bflavor = pSimulation.gf_flav[b]
       # loop over all transitions c^dag_b|1>
       for n1=0:Nmax
          for s1=1:noSpinConfig(n1,Nmax)
-            for i21=1:length(transitions[2*b-1].transitions[n1+1][s1])
+            for i21=1:length(transitions[2*b-1].transitions[n1+1][s1])        # 2*b-1 is cdagger_b
                trans2cdagb1 = transitions[2*b-1].transitions[n1+1][s1][i21]
                overlapb = trans2cdagb1.overlap
                ifrom,ito = trans2cdagb1.iFromTo[1:2]
@@ -81,16 +82,17 @@ function getGF(transitions::Array{Transitions,1},   # two for each flavor
                s2 = trans2cdagb1.sFromTo[2]
 
                for a=1:b # only upper triangular part
+                  aflavor = pSimulation.gf_flav[a]
                   # the transition <1|c_a|2> is completely fixed by knowing <2|c^dag_b|1>, just look up the overlap if there exists one
                   # c_a brings us back to the right particle number sector
-                  # but we need to check whether it's the right spin sector, which means a,b have both be either odd or even (i.e. both up or down)
-                  # i.e. a+b is always even, so we conserve spin
+                  # but we need to check whether it's the right spin sector, which means aflavor,bflavor have both be either odd or even (i.e. both up or down)
+                  # i.e. aflavor+bflavor is always even, so we conserve spin
                   # otherwise <c_up c*_dn> will give a finite contribution
                   # This should be improved, for now it's a sketchy fix
                   # THIS NEEDS TO BE CHECKED FOR 2PART GF AS WELL!!
                         
-                  it = get( transitions[2*a-0].dictFromTo[n2+1][s2], (ito,ifrom) , 0 )
-                  if (it>0 && (a+b)%2==0 )
+                  it = get( transitions[2*a-0].dictFromTo[n2+1][s2], (ito,ifrom) , 0 )  # 2*a-0 is c_a
+                  if (it>0 && (aflavor+bflavor)%2==0 )
 
                      ovrlp = (exp(-beta*Efrom)+exp(-beta*Eto))*transitions[2*a-0].transitions[n2+1][s2][it].overlap*overlapb      # <n1|c_a|n2> * <n2|cdag_b|n1>
 
