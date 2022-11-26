@@ -9,10 +9,10 @@ const TwoParticleFunction = Array{Complex{Float64},1}  # single orbital for now,
 Construct the noninteracting Green's function from onsite energy `eps`,
 hoppings between sites `i` and `j`, `tmatrix` and Matsubara grid `w`.
 """
-function getG0(        eps::Array{Float64,1},
-                   tmatrix::TMatrix,  
+function getG0(eps::Array{Float64,1},
+               tmatrix::Matrix,  
                pSimulation::ModelParameters,
-                         w::FrequencyMeshCplx )::SingleParticleFunction where TMatrix <: SMatrix
+                         w::FrequencyMeshCplx )::SingleParticleFunction
    nflav=length(pSimulation.gf_flav)
    nw = length(w)
    gf0::SingleParticleFunction = zeros(nflav,nflav,nw)

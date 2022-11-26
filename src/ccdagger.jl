@@ -1,4 +1,4 @@
-const CAmatrix    = SparseMatrixCSC{Int8,Int64}   # matrix type for creation/annihilation matrix
+const CAmatrix    = Matrix #SparseMatrixCSC{FockElement,Int64}   # matrix type for creation/annihilation matrix
 
 """
     getCmatrix(anni::Int64,subspace1, subspace2)
@@ -28,7 +28,7 @@ function getCmatrix(anni::Int64,
             push!(indexI,i); push!(indexJ,j); push!(val,c1sgn)
         end
     end # j
-    return sparse(indexI,indexJ,val, dim1,dim2)
+    return collect(sparse(indexI,indexJ,val, dim1,dim2))
 end
 
 """
@@ -60,7 +60,7 @@ function getCdagmatrix(crea::Int64,
             push!(indexI,i); push!(indexJ,j); push!(val,c1sgn)
         end
     end # j
-    return sparse(indexI,indexJ,val, dim1,dim2)
+    return collect(sparse(indexI,indexJ,val, dim1,dim2))
 end
 ######################################################################
 

@@ -11,12 +11,12 @@ Fields
 - **`overlap`**     :
 """
 struct Transition
-   iFromTo   ::Vector{Int64}    # [index_from, index_to]
-   nFromTo   ::Vector{Int64}    # particle number from-to
-   sFromTo   ::Vector{Int64}    # spin-index from-to
+   iFromTo   ::Vector{Int}    # [index_from, index_to]
+   nFromTo   ::Vector{Int}    # particle number from-to
+   sFromTo   ::Vector{Int}    # spin-index from-to
    EvalFromTo::Vector{Eigenvalue}
    ExpFromTo ::Vector{Float64}
-   overlap   ::Vector{Float64}
+   overlap   ::Float64
 end
 
 """
@@ -90,7 +90,8 @@ function Transitions(flavor::Int64,
                   expTo = exp(-beta*Eto)
 
                   if expCutoff==0 || expTo+expFrom>pNumerics.cutoff
-                     ovrlp = dot( eigenspace.evecs[n2+1][s2][j], cmat * eigenspace.evecs[n1+1][s1][i] ) # overlap
+                      #TODO: this should be conj(v) * v ??
+                      ovrlp = real(eigenspace.evecs[n2+1][s2][j]' * (cmat * eigenspace.evecs[n1+1][s1][i] )) # overlap
                      if abs(ovrlp) > pNumerics.cutoff
                         push!(transitions[n1+1][s1], Transition([i,j],[n1,n2],[s1,s2],[Efrom,Eto],[expFrom,expTo],ovrlp) )     # save transition
                         push!(dictFTList, ( (i,j), length(transitions[n1+1][s1])   ) )
@@ -122,7 +123,7 @@ end
 #                               Auxilliary Function                            #
 ################################################################################
 
-function get1pGFTransitions(flavors::Array{Int64,1},
+function get1pGFTransitions(flavors::Vector{Int64},
                      eigenspace::Eigenspace,
                      fockstates::Fockstates,
                      beta::Float64,

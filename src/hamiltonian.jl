@@ -46,7 +46,7 @@ return the hopping contribution for states `<i| |j>`
 """
 function getHopping( istate::Fockstate,
                      jstate::Fockstate,
-                     tmatrix::SMatrix,
+                     tmatrix::Matrix,
                      pNumerics::NumericalParameters)
     # we act c^dagger c on the state |j> and check overlap with <i|
     norb = size(tmatrix)[1]
@@ -74,8 +74,8 @@ end
 return the  density density part of the Coulomb interaction contribution
 """
 function getUdensity(  state::Fockstate,
-                     Umatrix::SMatrix,
-                     Jmatrix::SMatrix,
+                     Umatrix::Matrix,
+                     Jmatrix::Matrix,
                      pNumerics::NumericalParameters)
     norb = size(Umatrix)[1]
     htmp = 0.0
@@ -104,7 +104,7 @@ return the spin-flip and pair-hopping part of the interaction contribution
 """
 function getUnondensity( istate::Fockstate,
                          jstate::Fockstate,
-                        Jmatrix::SMatrix,
+                        Jmatrix::Matrix,
                         pNumerics::NumericalParameters)
     norb = size(Jmatrix)[1]
     htmp = 0.0
@@ -199,8 +199,8 @@ over precomputed `states`.
 
 TODO: moved from sparse to StaticArray. Write a decision routine and chose between static (small), normal, sparse (large) version for very large basis (norb > 12?)
 """
-function getHamiltonian(eps::Vector{Float64},tmatrix::SMatrix,
-                        Umatrix::SMatrix,Jmatrix::SMatrix, 
+function getHamiltonian(eps::Vector{Float64},tmatrix::Matrix,
+                        Umatrix::Matrix,Jmatrix::Matrix, 
                         mu::Float64,aim::Int64,
                         states::Vector{Fockstate},
                         pNumerics::NumericalParameters)::Hamiltonian
@@ -246,8 +246,8 @@ end
 
 Create the N,S submatrices of the Hamiltonian, solve it and return the Eigenvalues and Vectors in a List
 """
-function getEvalveclist(eps::Vector{Float64},tmatrix::SMatrix,
-                        Umatrix::SMatrix,Jmatrix::SMatrix,
+function getEvalveclist(eps::Vector{Float64},tmatrix::Matrix,
+                        Umatrix::Matrix,Jmatrix::Matrix,
                         mu::Float64, aim::Int64,
                         fockstates::Fockstates,
                         pNumerics::NumericalParameters)

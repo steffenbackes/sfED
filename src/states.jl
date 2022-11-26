@@ -1,4 +1,4 @@
-const FockElement = Int64                               # one number element of a Fock state
+const FockElement = Int                               # one number element of a Fock state
 const Fockstate   = Vector{FockElement}               # The standard Fock state e.g. [00101011] 
 const NSstates    = Vector{Vector{Vector{Fockstate}}} # Segmentation of Fock states into quantum numbers N and S (i.e. acccess to `arr::NSstates` is arr[Ni][Sj][k] for the k-th state with particle number index `Ni` and spin index (inside `Ni` block) `Sj`)
 
@@ -60,8 +60,8 @@ end
 
 Constructor for  [`Eigenspace`](@ref Eigenspace). 
 """
-function Eigenspace(eps::Vector{Float64},tmatrix::SMatrix,
-                    Umatrix::SMatrix,Jmatrix::SMatrix,
+function Eigenspace(eps::Vector{Float64},tmatrix::Matrix,
+                    Umatrix::Matrix,Jmatrix::Matrix,
                     pSimulation::ModelParameters,
                     fockstates::Fockstates,
                     pNumerics::NumericalParameters)

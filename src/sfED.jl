@@ -4,6 +4,7 @@ export example_run, noSpinConfig
 export FockElement, Fockstates, Eigenspace
 export ModelParameters, NumericalParameters, FrequencyMeshes, FrequencyMeshCplx
 export getN, getNN, getEps, get1pGFTransitions
+export getCsign
 export getTmatrix, getUJmatrix, getG0, getGF, getSigma, getZ, getSigma, getE
 export writeGF, writeParticleNumbers, writeDoubleOccupations, writeEvalInfo
 
