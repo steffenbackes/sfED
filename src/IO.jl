@@ -1,8 +1,27 @@
-
+import Base: show
 # ============================ Comments ============================
 # TODO: write macro that wraps all func(io::IO,...) in func(fname::String,...) and func(...) (stdou)
 #
 #
+#
+
+# ========================= Custom type overloads =========================
+# function show(io::IO, f::FockElement)
+#     bb = strip(bitstring(f), '0')
+#     bb = pad(bb,length(bb)%2 + length(bb), "0")
+#     compact = get(io, :compact, false)
+#     if length(bb) > 1
+#         print(io, "...")
+#         for i in 1:2:length(bb)
+#             du = parse(Int, bb[i])
+#             dd = parse(Int, bb[i+1])
+#             print(io, ("↑"^du)*("O"^(1-du))*("↓"^dd)*("O"^(1-dd)))
+#             (i < length(bb) - 2) && print(io, "-")
+#        end
+#    else
+#        print(io, "...-00")
+#    end
+# end
 # ======================= Auxilliary Function =======================
 
 # ========================= Main Functions =========================

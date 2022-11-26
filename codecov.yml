@@ -1,0 +1,4 @@
+ignore:
+  - "src/MatrixTemplates.jl"
+  - "src/IO.jl"
+  - "src/graveyard.jl"

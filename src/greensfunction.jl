@@ -10,9 +10,9 @@ Construct the noninteracting Green's function from onsite energy `eps`,
 hoppings between sites `i` and `j`, `tmatrix` and Matsubara grid `w`.
 """
 function getG0(        eps::Array{Float64,1},
-                   tmatrix::Array{Float64,2},  
+                   tmatrix::TMatrix,  
                pSimulation::ModelParameters,
-                         w::FrequencyMeshCplx )::SingleParticleFunction
+                         w::FrequencyMeshCplx )::SingleParticleFunction where TMatrix <: SMatrix
    nflav=length(pSimulation.gf_flav)
    nw = length(w)
    gf0::SingleParticleFunction = zeros(nflav,nflav,nw)

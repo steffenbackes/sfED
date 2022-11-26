@@ -11,12 +11,12 @@ Fields
 - **`overlap`**     :
 """
 struct Transition
-   iFromTo   ::Array{Int64,1}    # [index_from, index_to]
-   nFromTo   ::Array{Int64,1}    # particle number from-to
-   sFromTo   ::Array{Int64,1}    # spin-index from-to
-   EvalFromTo::Array{Eigenvalue,1}
-   ExpFromTo::Array{Float64,1}
-   overlap   ::Complex{Float64}
+   iFromTo   ::Vector{Int64}    # [index_from, index_to]
+   nFromTo   ::Vector{Int64}    # particle number from-to
+   sFromTo   ::Vector{Int64}    # spin-index from-to
+   EvalFromTo::Vector{Eigenvalue}
+   ExpFromTo ::Vector{Float64}
+   overlap   ::Vector{Float64}
 end
 
 """
@@ -29,9 +29,9 @@ Fields
 - **`dictFrom`**    : Dictionary returning the range  of transitions which start from "from" ->any
 """
 struct Transitions
-   transitions::Array{Array{Array{Transition,1},1},1}
-   dictFromTo ::Array{Array{Dict{Tuple{Int64,Int64},Int64},1},1}
-   dictFrom   ::Array{Array{Dict{Int64,UnitRange{Int64}},1},1}
+   transitions::Vector{Vector{Vector{Transition}}}
+   dictFromTo ::Vector{Vector{Dict{Tuple{Int64,Int64},Int64}}}
+   dictFrom   ::Vector{Vector{Dict{Int64,UnitRange{Int64}}}}
 end
 
 """

@@ -1,7 +1,6 @@
-#typedefs
-const FrequencyMesh     = Array{Float64,1}
-
-const FrequencyMeshCplx = Array{Complex{Float64},1}
+# typedefs ##############################################################
+const FrequencyMesh     = Vector{Float64}
+const FrequencyMeshCplx = Vector{ComplexF64}
 
 # parameter structs #####################################################
 
@@ -20,16 +19,15 @@ Fields
 - **`gf_flav`** : flavors (orb/spin) for which the Green's function is calculated (full matrix flav x flav)
 """
 struct ModelParameters
-   U      ::Float64
-   J      ::Float64
-   Up     ::Float64
-   t      ::Float64
-   mu     ::Float64
-   beta   ::Float64
-   aim    ::Int64
-   gf_flav::Array{Int64,1}
+    U      ::Float64
+    J      ::Float64
+    Up     ::Float64
+    t      ::Float64
+    mu     ::Float64
+    beta   ::Float64
+    aim    ::Int64
+    gf_flav::Array{Int64,1}
 end
-
 ModelParameters(;U,J,Up=U-2*J,t,mu,beta,aim,gf_flav) = ModelParameters(U,J,Up,t,mu,beta,aim,gf_flav)
 
 
@@ -42,24 +40,36 @@ Fields
 - **`cutoff`** : numerical cutoff for things like Boltzmann weights or other things
 """
 struct NumericalParameters
-   delta            ::Float64
-   cutoff           ::Float64
-
-   NumericalParameters(;delta,cutoff) = new(delta,cutoff)
+    delta            ::Float64
+    cutoff           ::Float64
 end
+NumericalParameters(;delta,cutoff) = NumericalParameters(delta,cutoff)
 
+
+"""
+    FrequencyMeshes
+
+Frequency meshes for 1 and 2 particle calculations. Constructed via `FrequencyMeshes(;nw, wmin, wmax, iwmax, beta)` with `nw` being the length of the real frequency mesh starting at `wmin` and ending at `wmax`.
+    `iwmax` gives the number of negative frequencies (there are equally many positive frequencies generated in the bosonic case and `iwmax-1` positive frequencies in the fermionic one) for the fermionic and bosonic mesh at temperature `beta`.
+
+Fields
+-------------
+
+- **`wf`**  : Real frequency mesh
+- **`iwf`** : Fermionic Matsubara frequency mesh
+- **`ivf`** : Bosonic Matsubara frequency mesh
+"""
 struct FrequencyMeshes
-   # Real frequency mesh
-   wf::FrequencyMesh   # frequency mesh
-
-   # Fermionic Matsubara frequency mesh
-   iwf::FrequencyMesh # frequency mesh
-
-   # Bosonic Matsubara frequency mesh
-   ivf::FrequencyMesh # frequency mesh
-
-   FrequencyMeshes(;nw,wmin,wmax,iwmax,beta) = nw>0 ? new( [wmin+n*(wmax-wmin)/nw for n=0:nw-1], 
-                                                      [(2*n+1)*pi/beta for n=0:round(Int64, (iwmax*beta/pi-1)/2)-1],
-                                                      [(2*n+0)*pi/beta for n=0:round(Int64, (iwmax*beta/pi-1)/2) ] ) :
-                                                 throw(ArgumentError("nw=$nw has to be larger than zero!"))
+    wf::FrequencyMesh
+    iwf::FrequencyMesh
+    ivf::FrequencyMesh
+    function FrequencyMeshes(;nw, wmin, wmax, iwmax, beta) 
+        if nw > 0
+            new([wmin+n*(wmax-wmin)/nw for n=0:nw-1], 
+                [(2*n+1)*pi/beta for n=-iwmax:iwmax],
+                [(2*n+0)*pi/beta for n=-iwmax:iwmax-1] )
+        else
+            throw(ArgumentError("nw=$nw has to be larger than zero!"))
+        end
+    end
 end
